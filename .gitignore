@@ -1,0 +1,22 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Environment variables
+.env
+*.env.local
+
+# Browser User Data / Sessions (Never commit sensitive cookies/sessions)
+.chrome_user_data/
+chrome_data/
+*.session
+
+# Logs
+*.log
