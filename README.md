@@ -1,18 +1,23 @@
-# LMS Forum Answer - Browser Automation with Selenium & uv
+# BINUS LMS Forum Web Assistant (FastAPI & Pure HTML/CSS/JS)
 
-Proyek otomasi browser menggunakan **Python**, **Selenium 4**, dan **uv** sebagai package manager, dilengkapi fitur penyimpanan sesi profil pengguna (**stored user data / persistent browser profile**).
-
-Dengan konfigurasi ini, sesi login, cookie, dan riwayat browsing disimpan secara lokal sehingga Anda tidak perlu login berulang kali (termasuk verifikasi 2FA/SSO) setiap kali script dijalankan.
+A lightweight, standalone local web application built with **FastAPI**, **vanilla JavaScript**, and **uv** to monitor and answer [BINUS LMS](https://lms.binus.ac.id/lms) forum discussions directly from your browser.
 
 ---
 
 ## 🚀 Fitur Utama
 
-- **`uv` Package Manager**: Manajemen environment dan dependensi Python ultra-cepat.
-- **Selenium 4 Auto-Driver**: Driver Chrome otomatis dikelola oleh Selenium Manager bawaan (tanpa perlu download ChromeDriver manual).
-- **Persistent Profile (`--user-data-dir`)**: Direktori data tersimpan (`.chrome_user_data/`) agar sesi login tetap aktif.
-- **Anti-Bot Flag Mitigation**: Konfigurasi flag untuk meminimalkan deteksi bot pada form/LMS (`navigator.webdriver` disabled).
-- **Context Manager Support**: Pembersihan otomatis instance Chrome via `with get_browser() as driver:`.
+- **Pure Web Dashboard (Single-Page)**: Dibuka di browser (`http://127.0.0.1:8000`), ultra-cepat, tanpa framework berat (no Gradio, no Tkinter).
+- **Auto-Period Detection**: Otomatis mendeteksi dan memilih periode akademik aktif (`isRunningPeriod: true`, contoh: `2611`).
+- **Subject Selector**: Dropdown mata kuliah hanya menampilkan nama subject yang bersih (contoh: *Computer Vision Application*, *Generative Artificial Intelligence*, *Internet of Things (IoT)*).
+- **Card-Based Feed**: Setiap pertanyaan forum dosen ditampilkan dalam kartu lengkap dengan:
+  - Label sesi & topik
+  - Nama & role dosen pengampu (`Instructor`)
+  - Indikator status: 🟢 **Replied by You** (dengan preview jawaban Anda) vs 🟠 **Not Replied Yet**
+  - Opsi filter: *"Show Unanswered Only"* dan filter per sesi
+- **Direct Answer Submission**: Form jawaban langsung pada kartu pertanyaan untuk submit jawaban via API (`/Comment/Post`) tanpa membuka LMS manual. Status otomatis berubah ke 🟢 secara instan tanpa reload halaman.
+- **Smart Auth & Persistent Profile**:
+  - Menggunakan profil Chrome (`.chrome_user_data/`) agar SSO dan cookie tetap tersimpan.
+  - Token didekripsi otomatis dengan AES key LMS (`%v$4T!9CRqE_[G-=`) dan dicache di `.auth_cache.json` untuk startup instan (< 100ms).
 
 ---
 
@@ -20,14 +25,18 @@ Dengan konfigurasi ini, sesi login, cookie, dan riwayat browsing disimpan secara
 
 ```text
 lms_forum_answer/
-├── .chrome_user_data/      # Direktori lokal penyimpanan profil browser (auto-generated, git-ignored)
-├── .env                    # Konfigurasi environment lokal (git-ignored)
-├── .env.example            # Template konfigurasi environment
-├── .gitignore              # Daftar file yang dikecualikan dari Git
-├── browser.py              # Helper inisialisasi Selenium Chrome dengan stored user data
-├── main.py                 # Entry point dan contoh penggunaan
-├── pyproject.toml          # Deklarasi dependensi uv
-└── uv.lock                 # Lockfile dependensi
+├── .chrome_user_data/      # Profil Chrome tersimpan (cookies, SSO)
+├── .auth_cache.json        # Cache token JWT & headers APIM
+├── lms_auth.py             # Manajemen autentikasi & ekstraksi token
+├── lms_api.py              # Klien HTTP Azure APIM (periods, courses, sessions, threads, posts)
+├── server.py               # FastAPI backend REST API
+├── static/
+│   └── index.html          # Frontend single-page (Pure HTML5, CSS3, JS)
+├── browser.py              # Helper Selenium Chrome persistent profile
+├── main.py                 # Entry point aplikasi (auto-open browser)
+├── ecosystem.config.js     # Konfigurasi process manager PM2
+├── pyproject.toml          # Dependensi uv
+└── README.md               # Dokumentasi
 ```
 
 ---
@@ -35,45 +44,52 @@ lms_forum_answer/
 ## 🛠️ Cara Penggunaan
 
 ### 1. Sinkronisasi Dependensi dengan `uv`
-Jika pertama kali clone atau setup:
 ```powershell
 uv sync
 ```
 
-### 2. Konfigurasi Environment (`.env`)
-File `.env` sudah disediakan. Anda dapat menyesuaikan konfigurasi berikut jika diperlukan:
-```env
-CHROME_USER_DATA_DIR=./.chrome_user_data
-CHROME_PROFILE_DIR=Default
-HEADLESS=false
-```
-
-### 3. Login Pertama Kali (Mode Interaktif)
-Jalankan script dengan flag `--interactive` agar browser terbuka dan tetap menunggu hingga Anda selesai login secara manual di browser:
-```powershell
-uv run python main.py --interactive
-```
-- Browser Chrome akan terbuka.
-- Navigasi ke situs LMS Anda dan lakukan login (pastikan mencentang opsi *Remember Me* atau *Tetap Masuk* jika ada).
-- Setelah login berhasil, tekan **[Enter]** pada terminal untuk menutup browser. Sesi login akan tersimpan di folder `.chrome_user_data`.
-
-### 4. Menjalankan Otomasi
-Jalankan script utama:
+### 2. Jalankan Aplikasi Web
+Cukup jalankan:
 ```powershell
 uv run python main.py
 ```
-Browser akan otomatis membuka sesi dengan profil yang sudah login sebelumnya.
+Browser default Anda akan otomatis terbuka ke:
+👉 **`http://127.0.0.1:8000`**
+
+### 3. Jalankan di Background dengan PM2 (Rekomendasi)
+Agar aplikasi berjalan terus-menerus di background tanpa jendela terminal dan otomatis restart saat PC dinyalakan:
+
+1. **Install PM2 & Windows Startup Utility** (jika belum ada):
+   ```powershell
+   npm install -g pm2
+   npm install -g pm2-windows-startup
+   pm2-startup install
+   ```
+
+2. **Jalankan Aplikasi via PM2**:
+   ```powershell
+   pm2 start ecosystem.config.js
+   ```
+
+3. **Simpan agar otomatis jalan saat boot**:
+   ```powershell
+   pm2 save
+   ```
+
+4. **Perintah Berguna PM2**:
+   - Cek status: `pm2 status`
+   - Cek logs: `pm2 logs lms-forum`
+   - Restart: `pm2 restart lms-forum`
+   - Hentikan: `pm2 stop lms-forum`
 
 ---
 
-## 📦 Menambah Dependensi Baru dengan `uv`
-
-Untuk menambah package baru (misalnya `beautifulsoup4` atau `requests`):
-```powershell
-uv add beautifulsoup4 requests
-```
-
-Untuk menjalankan script Python apapun di dalam virtual environment:
-```powershell
-uv run python <nama_script>.py
-```
+### 4. Login Ulang (Jika Token Kedaluwarsa)
+Jika sesi login kedaluwarsa atau belum ada:
+- Klik tombol **"🔑 Re-Login"** pada navigasi web, atau
+- Jalankan via terminal:
+  ```powershell
+  uv run python main.py --login
+  ```
+- Browser Chrome akan terbuka. Silakan login ke akun BINUS Anda.
+- Sesi akan tersimpan otomatis dan halaman web akan merefresh data.
