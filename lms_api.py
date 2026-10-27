@@ -9,6 +9,8 @@ import requests
 APIM_BASE = "https://apim-bm7-prod-web.azure-api.net"
 COURSE_SERVICE = f"{APIM_BASE}/func-bm7-course-prod"
 FORUM_SERVICE = f"{APIM_BASE}/func-bm7-forum-prod"
+ASSESSMENT_SERVICE = "https://apim-bm7-assessment-prod.azure-api.net/func-bm7-assessment-prod"
+
 
 
 def parse_iso_datetime(dt_str: Optional[str]) -> Optional[datetime]:
@@ -140,21 +142,71 @@ class LmsApiClient:
 
     def get_courses(self, period: str, force_refresh: bool = False) -> List[Dict[str, Any]]:
         """Fetch enrolled courses (LEC component only) for a period (cached 30 mins)."""
-        cache_key = f"courses_{period}"
+        return self.get_courses_by_component(period, "LEC", force_refresh=force_refresh)
+
+    def get_courses_by_component(self, period: str, component: str = "LEC", force_refresh: bool = False) -> List[Dict[str, Any]]:
+        """Fetch enrolled courses for a given component (e.g. 'LEC' or 'LAB') in a period (cached 30 mins)."""
+        component = component.upper()
+        cache_key = f"courses_{period}_{component}"
         if not force_refresh:
             cached = self._get_cache(cache_key, 1800)
             if cached is not None:
                 return cached
 
-        url = f"{COURSE_SERVICE}/Course/Period/{period}/Component/LEC/Student"
+        url = f"{COURSE_SERVICE}/Course/Period/{period}/Component/{component}/Student"
         try:
             resp = self.session.get(url, timeout=15)
             if resp.status_code == 200:
                 courses = resp.json()
-                self._set_cache(cache_key, courses)
-                return courses
+                if isinstance(courses, list):
+                    for c in courses:
+                        c["component"] = component
+                    self._set_cache(cache_key, courses)
+                    return courses
         except Exception as e:
-            print(f"[lms_api] Warning fetching LEC courses for period {period}: {e}")
+            print(f"[lms_api] Warning fetching {component} courses for period {period}: {e}")
+
+        return []
+
+    def get_courses_all_components(self, period: str, force_refresh: bool = False) -> List[Dict[str, Any]]:
+        """Fetch courses across both LEC and LAB components for a period."""
+        all_courses = []
+        for comp in ["LEC", "LAB"]:
+            comp_courses = self.get_courses_by_component(period, comp, force_refresh=force_refresh)
+            all_courses.extend(comp_courses)
+        return all_courses
+
+    def get_assessment_cards(self, class_id: str, academic_period: str, force_refresh: bool = False) -> List[Dict[str, Any]]:
+        """Fetch assessment cards for a class and period (cached 10 mins)."""
+        cache_key = f"assessments_{class_id}_{academic_period}"
+        if not force_refresh:
+            cached = self._get_cache(cache_key, 600)
+            if cached is not None:
+                return cached
+
+        url = f"{ASSESSMENT_SERVICE}/Assessment/Class/{class_id}/Cards?academicPeriod={academic_period}"
+        payload = {
+            "continuationToken": None,
+            "orderBy": "asc",
+            "sortBy": "title",
+            "status": [],
+            "feedbacks": [],
+            "availabilities": [],
+            "sessionNumbers": [],
+            "subjects": [],
+            "types": []
+        }
+        try:
+            resp = self.session.post(url, json=payload, timeout=20)
+            if resp.status_code == 200:
+                data = resp.json()
+                groups = data.get("data", []) if isinstance(data, dict) else []
+                self._set_cache(cache_key, groups)
+                return groups
+            else:
+                print(f"[lms_api] Assessment Cards HTTP {resp.status_code} for class {class_id}")
+        except Exception as e:
+            print(f"[lms_api] Error fetching assessment cards for class {class_id}: {e}")
 
         return []
 

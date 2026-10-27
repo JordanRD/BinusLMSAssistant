@@ -10,6 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
     <style>
       :root {
         --bg: #f8fafc;
@@ -65,13 +66,128 @@
         background-color: var(--bg);
         color: var(--text);
         line-height: 1.5;
-        padding: 24px;
         min-height: 100vh;
       }
 
-      .container {
-        max-width: 1080px;
+      [x-cloak] {
+        display: none !important;
+      }
+
+      /* App Layout with Sidebar */
+      .app-layout {
+        display: flex;
+        min-height: 100vh;
+      }
+
+      .sidebar {
+        width: 250px;
+        background: var(--surface);
+        border-right: 1px solid var(--surface-border);
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        padding: 20px 16px;
+        z-index: 10;
+      }
+
+      .sidebar-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 4px 8px 18px 8px;
+        border-bottom: 1px solid var(--surface-border);
+        margin-bottom: 16px;
+      }
+
+      .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+      }
+
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        border-radius: var(--radius);
+        color: var(--text-muted);
+        font-size: 0.925rem;
+        font-weight: 600;
+        border: 1px solid transparent;
+        background: transparent;
+        width: 100%;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        font-family: inherit;
+      }
+
+      .nav-item:hover {
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .nav-item.active {
+        background: rgba(37, 99, 235, 0.1);
+        color: var(--primary);
+        border-color: rgba(37, 99, 235, 0.25);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .nav-item.active {
+          background: rgba(59, 130, 246, 0.15);
+          color: var(--primary-hover);
+          border-color: rgba(59, 130, 246, 0.3);
+        }
+      }
+
+      .nav-icon {
+        font-size: 1.15rem;
+        line-height: 1;
+      }
+
+      .main-content {
+        flex: 1;
+        min-width: 0;
+        padding: 28px 36px;
+        overflow-y: auto;
+      }
+
+      .main-container {
+        max-width: 1120px;
         margin: 0 auto;
+      }
+
+      @media (max-width: 768px) {
+        .app-layout {
+          flex-direction: column;
+        }
+        .sidebar {
+          width: 100%;
+          height: auto;
+          position: static;
+          border-right: none;
+          border-bottom: 1px solid var(--surface-border);
+          padding: 14px 16px;
+        }
+        .sidebar-brand {
+          padding-bottom: 12px;
+          margin-bottom: 12px;
+        }
+        .sidebar-nav {
+          flex-direction: row;
+        }
+        .sidebar-footer {
+          display: none;
+        }
+        .main-content {
+          padding: 18px 16px;
+        }
       }
 
       /* Header */
@@ -651,6 +767,7 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        overflow: hidden;
       }
 
       .avatar-circle.is-me {
@@ -692,51 +809,368 @@
         flex-direction: column;
         gap: 10px;
       }
+
+      /* ========================================================
+         Schedule & Assessment Cards Styles
+         ======================================================== */
+      .schedule-filter-card {
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        border-radius: var(--radius);
+        padding: 20px;
+        margin-bottom: 24px;
+        box-shadow: var(--shadow);
+      }
+
+      .schedule-control-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .schedule-divider {
+        height: 1px;
+        background: var(--surface-border);
+        margin: 16px 0;
+      }
+
+      .filter-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 9999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: 1px solid var(--surface-border);
+        background: var(--bg);
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        user-select: none;
+      }
+
+      .filter-pill:hover {
+        border-color: var(--primary);
+        color: var(--text);
+      }
+
+      .filter-pill.active {
+        background: var(--primary);
+        border-color: var(--primary);
+        color: #ffffff;
+      }
+
+      .filter-pill.active .pill-counter {
+        background: rgba(255, 255, 255, 0.25);
+        color: #ffffff;
+      }
+
+      .pill-counter {
+        font-size: 0.72rem;
+        padding: 2px 6px;
+        border-radius: 9999px;
+        background: var(--surface-border);
+        color: var(--text-muted);
+      }
+
+      .pill-lec.active {
+        background: #2563eb;
+        border-color: #2563eb;
+      }
+      .pill-lab.active {
+        background: #9333ea;
+        border-color: #9333ea;
+      }
+
+      .filter-group-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-muted);
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .filter-text-btn {
+        background: none;
+        border: none;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--primary);
+        cursor: pointer;
+        padding: 0 4px;
+      }
+      .filter-text-btn:hover {
+        text-decoration: underline;
+      }
+
+      .schedule-cards-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .assessment-card {
+        background: var(--surface);
+        border: 1px solid var(--surface-border);
+        border-radius: var(--radius);
+        padding: 16px 20px;
+        box-shadow: var(--shadow);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        position: relative;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+      }
+
+      @media (min-width: 768px) {
+        .assessment-card {
+          flex-direction: row;
+          align-items: center;
+          justify-content: space-between;
+          gap: 20px;
+        }
+        .assessment-card-main {
+          flex: 1;
+          min-width: 0;
+        }
+        .assessment-card-dates {
+          flex-shrink: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+      }
+
+      .assessment-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--card-shadow);
+        border-color: rgba(37, 99, 235, 0.5);
+      }
+
+      .badge-comp-lec {
+        background: #eff6ff;
+        color: #1d4ed8;
+        border: 1px solid #bfdbfe;
+      }
+      .badge-comp-lab {
+        background: #faf5ff;
+        color: #7e22ce;
+        border: 1px solid #e9d5ff;
+      }
+      @media (prefers-color-scheme: dark) {
+        .badge-comp-lec {
+          background: #1e3a8a;
+          color: #93c5fd;
+          border-color: #1d4ed8;
+        }
+        .badge-comp-lab {
+          background: #581c87;
+          color: #d8b4fe;
+          border-color: #7e22ce;
+        }
+      }
+
+      .badge-type-tag {
+        background: var(--bg);
+        color: var(--text);
+        border: 1px solid var(--surface-border);
+      }
+
+      .badge-avail-open {
+        background: #ecfdf5;
+        color: #059669;
+        border: 1px solid #a7f3d0;
+      }
+      .badge-avail-urgent {
+        background: #fffbeb;
+        color: #d97706;
+        border: 1px solid #fde68a;
+      }
+      .badge-avail-upcoming {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 1px solid #cbd5e1;
+      }
+      .badge-avail-completed {
+        background: #f0fdf4;
+        color: #15803d;
+        border: 1px solid #bbf7d0;
+      }
+      .badge-avail-overdue {
+        background: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+      }
+      @media (prefers-color-scheme: dark) {
+        .badge-avail-open {
+          background: #064e3b;
+          color: #6ee7b7;
+          border-color: #059669;
+        }
+        .badge-avail-urgent {
+          background: #78350f;
+          color: #fcd34d;
+          border-color: #d97706;
+        }
+        .badge-avail-upcoming {
+          background: #1e293b;
+          color: #94a3b8;
+          border-color: #334155;
+        }
+        .badge-avail-completed {
+          background: #14532d;
+          color: #86efac;
+          border-color: #16a34a;
+        }
+        .badge-avail-overdue {
+          background: #7f1d1d;
+          color: #fca5a5;
+          border-color: #b91c1c;
+        }
+      }
+
+      .date-info-box {
+        background: var(--bg);
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-top: 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-size: 0.8rem;
+      }
+
+      .date-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
     </style>
   </head>
   <body>
-    <div class="container">
-      <!-- Header -->
-      <header>
-        <div class="brand-title">
-          <span>🎓</span>
-          <span>BINUS LMS Forum Assistant</span>
-        </div>
-        <div style="display: flex; gap: 10px; align-items: center">
-          <div class="user-pill" id="userPill">
-            <span>Loading user profile...</span>
+    <div class="app-layout" x-data="lmsApp" x-cloak>
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <span style="font-size: 1.5rem;">🎓</span>
+          <div>
+            <div style="font-weight: 700; font-size: 1.05rem; line-height: 1.2;">BINUS LMS</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">Forum Assistant</div>
           </div>
-          <button
-            class="btn btn-secondary"
-            id="reloginBtn"
-            onclick="triggerRelogin()"
-          >
-            🔑 Re-Login
-          </button>
         </div>
-      </header>
+        <nav class="sidebar-nav">
+          <button
+            type="button"
+            class="nav-item"
+            :class="{ 'active': currentTab === 'forum' }"
+            @click="currentTab = 'forum'"
+          >
+            <span class="nav-icon">💬</span>
+            <span>Forum</span>
+          </button>
+          <button
+            type="button"
+            class="nav-item"
+            :class="{ 'active': currentTab === 'schedule' }"
+            @click="currentTab = 'schedule'"
+          >
+            <span class="nav-icon">📅</span>
+            <span>Schedule</span>
+          </button>
+        </nav>
+        <div class="sidebar-footer">
+          <div style="font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 12px 0; border-top: 1px solid var(--surface-border);">
+            BINUS LMS Assistant
+          </div>
+        </div>
+      </aside>
 
-      <!-- Filters Panel -->
+      <!-- Main Content Area -->
+      <main class="main-content">
+        <div class="main-container">
+          <!-- Header -->
+          <header>
+            <div>
+              <h1 style="font-size: 1.35rem; font-weight: 700;" x-text="currentTab === 'forum' ? 'Forum Diskusi' : 'Jadwal Kuliah'"></h1>
+              <p style="font-size: 0.85rem; color: var(--text-muted);" x-text="currentTab === 'forum' ? 'Kelola dan jawab pertanyaan dosen BINUS LMS' : 'Jadwal perkuliahan dan sesi kelas'"></p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center">
+              <div class="user-pill" id="userPill">
+                <template x-if="authError">
+                  <span style="color:var(--danger)" x-text="authError"></span>
+                </template>
+                <template x-if="!authError && !user">
+                  <span>Loading user profile...</span>
+                </template>
+                <template x-if="user">
+                  <div style="display:flex; align-items:center; gap:8px;">
+                    <strong x-text="user.name"></strong>
+                    <span>•</span>
+                    <span x-text="`${user.role} (${user.academicCareer})`"></span>
+                  </div>
+                </template>
+              </div>
+              <button
+                class="btn btn-secondary"
+                id="reloginBtn"
+                :disabled="isRelogging"
+                @click="triggerRelogin()"
+              >
+                <span x-show="isRelogging" class="spinner" style="border-top-color: var(--primary); width:14px; height:14px; margin-right:4px;"></span>
+                <span x-text="isRelogging ? 'Opening Chrome...' : '🔑 Re-Login'"></span>
+              </button>
+            </div>
+          </header>
+
+          <!-- TAB: Forum -->
+          <div x-show="currentTab === 'forum'">
+            <!-- Filters Panel -->
       <div class="filter-panel">
         <div class="filter-grid">
           <div class="form-group">
             <label for="periodSelect">📅 Academic Period</label>
-            <select id="periodSelect" onchange="onPeriodChange()">
-              <option value="">Loading periods...</option>
+            <select id="periodSelect" x-model="selectedPeriod" @change="onPeriodChange()">
+              <template x-if="isLoadingPeriods">
+                <option value="">Loading periods...</option>
+              </template>
+              <template x-for="p in periods" :key="p.code">
+                <option :value="p.code" x-text="`${p.code} - ${p.description}${p.isRunning ? ' (Active)' : ''}`"></option>
+              </template>
             </select>
           </div>
 
           <div class="form-group" style="grid-column: span 1.5">
             <label for="subjectSelect">📚 Subject</label>
-            <select id="subjectSelect" onchange="onSubjectChange()">
-              <option value="">Select subject...</option>
+            <select id="subjectSelect" x-model="selectedCourseIndex" @change="onSubjectChange()">
+              <template x-if="courses.length === 0">
+                <option value="" x-text="subjectPlaceholder"></option>
+              </template>
+              <template x-for="(c, idx) in courses" :key="c.classId || idx">
+                <option :value="idx" x-text="c.courseName"></option>
+              </template>
             </select>
           </div>
 
           <div class="form-group" style="grid-column: span 1.5">
             <label for="sessionSelect">🏷️ Session Filter</label>
-            <select id="sessionSelect" onchange="onSessionChange()">
-              <option value="">Loading sessions...</option>
+            <select id="sessionSelect" x-model="selectedSessionId" @change="onSessionChange()">
+              <template x-if="sessions.length === 0">
+                <option value="" x-text="sessionPlaceholder"></option>
+              </template>
+              <template x-for="s in sessions" :key="s.sessionId">
+                <option :value="s.sessionId" x-text="`Session ${s.classSessionNumber}: ${s.topicName}${s.isActive ? ' ⭐ (Active)' : ''}`"></option>
+              </template>
             </select>
           </div>
 
@@ -745,7 +1179,7 @@
               <input
                 type="checkbox"
                 id="unansweredOnly"
-                onchange="filterPostsClientSide()"
+                x-model="unansweredOnly"
               />
               <span>Show Unanswered Only</span>
             </label>
@@ -753,16 +1187,18 @@
               class="btn btn-primary"
               style="width: 100%"
               id="fetchBtn"
-              onclick="fetchPosts()"
+              :disabled="isLoadingPosts"
+              @click="fetchPosts()"
             >
-              🔄 Fetch Posts
+              <span x-show="isLoadingPosts" class="spinner" style="margin-right: 4px;"></span>
+              <span x-text="isLoadingPosts ? 'Loading...' : '🔄 Fetch Posts'"></span>
             </button>
           </div>
         </div>
 
         <div class="status-bar">
-          <span id="statusBar">Ready.</span>
-          <span id="countBar"></span>
+          <span id="statusBar" x-text="statusBarText">Ready.</span>
+          <span id="countBar" x-text="countBarText"></span>
         </div>
       </div>
 
@@ -772,135 +1208,566 @@
       </div>
 
       <div id="postsFeed">
-        <div class="empty-state">
-          <h3>No subjects loaded</h3>
-          <p>Please select an Academic Period and Subject above.</p>
-        </div>
-      </div>
-    </div>
+        <!-- Initial empty state when no courses loaded -->
+        <template x-if="courses.length === 0 && !isLoadingPosts">
+          <div class="empty-state">
+            <h3>No subjects loaded</h3>
+            <p>Please select an Academic Period and Subject above.</p>
+          </div>
+        </template>
 
-    <!-- Modal Answers Overlay -->
-    <div
-      class="modal-overlay"
-      id="commentsModalOverlay"
-      onclick="handleModalOverlayClick(event)"
-    >
-      <div class="modal-container">
-        <div class="modal-header">
-          <div class="modal-title-area">
-            <h3 id="modalThreadTitle">Judul Pertanyaan</h3>
-            <p id="modalThreadSubtitle">Memuat jawaban...</p>
+        <!-- Empty state when courses loaded but filteredThreads is empty -->
+        <template x-if="courses.length > 0 && !isLoadingPosts && filteredThreads.length === 0">
+          <div class="empty-state">
+            <h3 x-text="emptyStateTitle"></h3>
+            <p x-show="selectedSessionText" x-text="`Filter: ${selectedSessionText}`"></p>
+            <p style="margin-top: 10px; font-size: 0.9rem; color: var(--primary);" x-text="emptyStateTip"></p>
+          </div>
+        </template>
+
+        <!-- Threads Cards Feed -->
+        <template x-for="t in filteredThreads" :key="t.threadId">
+          <div class="card" :id="`card-${t.threadId}`">
+            <div class="card-header">
+              <div>
+                <div class="thread-title">📌 <span x-text="t.title"></span></div>
+                <div class="badge-group" style="margin-top: 8px;">
+                  <span class="badge badge-session" x-text="`🏷️ Session ${t.sessionNumber}: ${t.topicName || ''}`"></span>
+                  <span class="badge badge-lecturer" x-text="`👨‍🏫 ${t.authorName} (${t.authorRole})`"></span>
+                  <span class="badge" :class="t.hasReplied ? 'badge-replied' : 'badge-unanswered'" x-text="t.hasReplied ? '🟢 Replied by You' : '🟠 Not Replied Yet'"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="question-box">
+              <h4>Question Prompt</h4>
+              <div x-text="t.questionText"></div>
+            </div>
+
+            <div style="margin-bottom: 14px;">
+              <button class="btn btn-secondary" @click="openCommentsModal(t.threadId)">
+                💬 Lihat Semua Jawaban
+              </button>
+            </div>
+
+            <template x-if="t.hasReplied && t.replyDate">
+              <div class="replied-notice">
+                <span>✅</span>
+                <span>Sudah dijawab pada: <strong x-text="formatDisplayDate(t.replyDate)"></strong></span>
+              </div>
+            </template>
+
+            <div class="answer-area">
+              <label style="font-size:0.8rem; font-weight:600; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:6px;">
+                ✍️ <span x-text="t.hasReplied ? 'Kirim Jawaban Tambahan' : 'Jawaban Anda'"></span>
+              </label>
+              <textarea
+                :id="`reply-${t.threadId}`"
+                x-model="getReplyState(t.threadId).text"
+                placeholder="Type your answer here..."
+              ></textarea>
+              <div class="card-actions">
+                <button
+                  class="btn btn-primary"
+                  :disabled="getReplyState(t.threadId).isSubmitting"
+                  @click="submitAnswer(t.threadId)"
+                >
+                  🚀 Submit Answer
+                </button>
+                <span
+                  class="submit-feedback"
+                  :class="getReplyState(t.threadId).feedbackClass"
+                  x-text="getReplyState(t.threadId).feedbackText"
+                ></span>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+      </div>
+
+      <!-- TAB: Schedule (Assessment Cards Page) -->
+      <div x-show="currentTab === 'schedule'">
+        <!-- Filter Card -->
+        <div class="schedule-filter-card">
+          <!-- Control Row 1: Period, Refresh, Search, Quick Stats -->
+          <div class="schedule-control-row" style="justify-content: space-between;">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); white-space: nowrap;">Periode:</label>
+                <select
+                  class="select-input"
+                  style="min-width: 240px; padding: 7px 12px; font-size: 0.85rem;"
+                  x-model="schedulePeriod"
+                  @change="loadScheduleAssessments()"
+                  :disabled="scheduleLoading"
+                >
+                  <template x-for="p in periods" :key="p.code">
+                    <option :value="p.code" x-text="p.description" :selected="p.code === schedulePeriod"></option>
+                  </template>
+                </select>
+              </div>
+
+              <button
+                type="button"
+                class="btn btn-secondary"
+                style="padding: 7px 14px; font-size: 0.85rem;"
+                @click="loadScheduleAssessments(true)"
+                :disabled="scheduleLoading"
+                title="Refresh Asesmen dari LMS"
+              >
+                <span :class="{ 'spin': scheduleLoading }">🔄</span>
+                <span>Refresh</span>
+              </button>
+            </div>
+
+            <!-- Search box -->
+            <div style="flex: 1; max-width: 320px; min-width: 200px;">
+              <input
+                type="text"
+                class="select-input"
+                style="width: 100%; padding: 7px 12px; font-size: 0.85rem;"
+                placeholder="🔍 Cari tugas / matakuliah..."
+                x-model="scheduleSearchQuery"
+              />
+            </div>
+          </div>
+
+          <div class="schedule-divider"></div>
+
+          <!-- Control Row 2: Category (LEC/LAB) & Availability Quick Tabs -->
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;">
+            <!-- Component Filters -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px;">Kategori:</span>
+              <button
+                type="button"
+                class="filter-pill pill-lec"
+                :class="{ 'active': scheduleCategories.includes('LEC') }"
+                @click="toggleScheduleCategory('LEC')"
+              >
+                <span>📘 Teori (LEC)</span>
+                <span class="pill-counter" x-text="scheduleCountByComp.LEC"></span>
+              </button>
+              <button
+                type="button"
+                class="filter-pill pill-lab"
+                :class="{ 'active': scheduleCategories.includes('LAB') }"
+                @click="toggleScheduleCategory('LAB')"
+              >
+                <span>💻 Praktikum (LAB)</span>
+                <span class="pill-counter" x-text="scheduleCountByComp.LAB"></span>
+              </button>
+            </div>
+
+            <!-- Availability Tabs -->
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+              <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px;">Status:</span>
+              <button
+                type="button"
+                class="filter-pill"
+                :class="{ 'active': scheduleAvailabilityFilter === 'all' }"
+                @click="scheduleAvailabilityFilter = 'all'"
+              >
+                <span>Semua</span>
+                <span class="pill-counter" x-text="scheduleCounts.total"></span>
+              </button>
+              <button
+                type="button"
+                class="filter-pill"
+                :class="{ 'active': scheduleAvailabilityFilter === 'open' }"
+                @click="scheduleAvailabilityFilter = 'open'"
+                style="border-color: rgba(5, 150, 105, 0.4);"
+              >
+                <span>🟢 Bisa Dikerjakan</span>
+                <span class="pill-counter" x-text="scheduleCounts.open"></span>
+              </button>
+              <button
+                type="button"
+                class="filter-pill"
+                :class="{ 'active': scheduleAvailabilityFilter === 'upcoming' }"
+                @click="scheduleAvailabilityFilter = 'upcoming'"
+              >
+                <span>⏳ Belum Dibuka</span>
+                <span class="pill-counter" x-text="scheduleCounts.upcoming"></span>
+              </button>
+              <button
+                type="button"
+                class="filter-pill"
+                :class="{ 'active': scheduleAvailabilityFilter === 'completed' }"
+                @click="scheduleAvailabilityFilter = 'completed'"
+              >
+                <span>🔵 Sudah Selesai</span>
+                <span class="pill-counter" x-text="scheduleCounts.completed"></span>
+              </button>
+              <button
+                type="button"
+                class="filter-pill"
+                :class="{ 'active': scheduleAvailabilityFilter === 'overdue' }"
+                @click="scheduleAvailabilityFilter = 'overdue'"
+                style="border-color: rgba(220, 38, 38, 0.4);"
+              >
+                <span>🔴 Terlewat</span>
+                <span class="pill-counter" x-text="scheduleCounts.overdue"></span>
+              </button>
+            </div>
+          </div>
+
+          <div class="schedule-divider"></div>
+
+          <!-- Control Row 3: Assessment Type Filter -->
+          <div style="margin-bottom: 14px;">
+            <div class="filter-group-title">
+              <span>Filter Jenis Tugas</span>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="filter-text-btn" @click="selectAllScheduleTypes()">Pilih Semua</button>
+                <span style="color: var(--surface-border);">|</span>
+                <button type="button" class="filter-text-btn" @click="clearAllScheduleTypes()">Batal Semua</button>
+              </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <template x-for="t in availableScheduleTypes" :key="t.key">
+                <button
+                  type="button"
+                  class="filter-pill"
+                  :class="{ 'active': scheduleSelectedTypes.includes(t.key) }"
+                  @click="toggleScheduleType(t.key)"
+                >
+                  <span x-text="t.label"></span>
+                  <span class="pill-counter" x-text="t.count"></span>
+                </button>
+              </template>
+            </div>
+          </div>
+
+          <!-- Control Row 4: Subject Filter -->
+          <div>
+            <div class="filter-group-title">
+              <span>Filter Mata Kuliah</span>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="filter-text-btn" @click="selectAllScheduleSubjects()">Pilih Semua</button>
+                <span style="color: var(--surface-border);">|</span>
+                <button type="button" class="filter-text-btn" @click="clearAllScheduleSubjects()">Batal Semua</button>
+              </div>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+              <template x-for="sub in visibleScheduleSubjects" :key="sub.key">
+                <button
+                  type="button"
+                  class="filter-pill"
+                  :class="{ 'active': scheduleSelectedSubjects.includes(sub.key) }"
+                  @click="toggleScheduleSubject(sub.key)"
+                >
+                  <span style="font-size: 0.72rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; margin-right: 2px;"
+                        :class="sub.component === 'LEC' ? 'badge-comp-lec' : 'badge-comp-lab'"
+                        x-text="sub.component"></span>
+                  <span x-text="sub.courseName"></span>
+                  <span class="pill-counter" x-text="sub.count"></span>
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feedback & Status Info Bar -->
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding: 0 4px;">
+          <div style="font-size: 0.9rem; font-weight: 600; color: var(--text);">
+            Menampilkan <span style="color: var(--primary);" x-text="filteredAssessments.length"></span> dari <span x-text="scheduleAssessments.length"></span> tugas
+            <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted); margin-left: 6px;">(Diurutkan berdasarkan due date terdekat)</span>
           </div>
           <button
-            class="modal-close-btn"
-            onclick="closeCommentsModal()"
-            title="Tutup (Esc)"
+            type="button"
+            class="filter-text-btn"
+            @click="resetScheduleFilters()"
+            x-show="isScheduleFiltered"
           >
-            ✕
+            Reset Semua Filter
           </button>
         </div>
 
-        <div class="modal-body" id="modalCommentsBody">
-          <!-- Pinned / Highlight Jawaban Anda -->
-          <div id="modalPinnedSection"></div>
+        <!-- Loading State -->
+        <div x-show="scheduleLoading" style="text-align: center; padding: 60px 20px;">
+          <div class="spin" style="display: inline-block; font-size: 2.2rem; margin-bottom: 12px;">🔄</div>
+          <div style="font-weight: 600; font-size: 1.05rem;">Memuat daftar asesmen & jadwal...</div>
+          <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Mengambil data seluruh mata kuliah teori & praktikum</div>
+        </div>
 
-          <!-- Form Tambah Jawaban di Dalam Modal -->
-          <div class="modal-reply-box">
-            <label
-              style="
-                font-size: 0.8rem;
-                font-weight: 600;
-                text-transform: uppercase;
-                color: var(--text-muted);
-                display: block;
-                margin-bottom: 6px;
-              "
-            >
-              ✍️ Kirim Jawaban Cepat
-            </label>
-            <textarea
-              id="modalReplyText"
-              placeholder="Tulis jawaban Anda di sini..."
-            ></textarea>
-            <div
-              style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-top: 8px;
-                gap: 12px;
-                flex-wrap: wrap;
-              "
-            >
-              <button
-                class="btn btn-primary"
-                id="modalSubmitBtn"
-                onclick="submitModalAnswer()"
-              >
-                🚀 Kirim Jawaban
-              </button>
-              <span class="submit-feedback" id="modalFeedback"></span>
+        <!-- Empty State -->
+        <div x-show="!scheduleLoading && filteredAssessments.length === 0" class="card" style="text-align: center; padding: 50px 20px; margin-top: 10px;">
+          <div style="font-size: 3rem; margin-bottom: 12px;">📋</div>
+          <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 6px;">Tidak ada asesmen yang cocok</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 440px; margin: 0 auto 16px auto;">
+            Tidak ditemukan tugas atau asesmen untuk kombinasi filter kategori, jenis tugas, atau ketersediaan yang dipilih.
+          </p>
+          <button type="button" class="btn btn-secondary" @click="resetScheduleFilters()">
+            Reset Filter
+          </button>
+        </div>
+
+        <!-- Cards Grid (1 Column) -->
+        <div class="schedule-cards-grid" x-show="!scheduleLoading && filteredAssessments.length > 0">
+          <template x-for="item in filteredAssessments" :key="item.id">
+            <div class="assessment-card" @click="openAssessmentInLms(item)">
+              <!-- Card Main (Left on desktop) -->
+              <div class="assessment-card-main">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
+                  <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                    <!-- Component Badge -->
+                    <span
+                      class="badge"
+                      :class="item.component === 'LEC' ? 'badge-comp-lec' : 'badge-comp-lab'"
+                      x-text="item.component === 'LEC' ? 'THEORY' : 'PRACTICUM'"
+                    ></span>
+
+                    <!-- Grouped Type Tag -->
+                    <span class="badge badge-type-tag" x-text="getTypeLabel(item)"></span>
+                  </div>
+
+                  <!-- Availability / Status Badge -->
+                  <span
+                    class="badge"
+                    :class="getCardAvailability(item).badgeClass"
+                  >
+                    <span x-text="getCardAvailability(item).icon"></span>
+                    <span x-text="getCardAvailability(item).label"></span>
+                  </span>
+                </div>
+
+                <!-- Course Name & Code -->
+                <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                  <span x-text="item.courseCode"></span>
+                  <span>•</span>
+                  <span x-text="item.classCode"></span>
+                  <span>—</span>
+                  <span x-text="item.courseName"></span>
+                </div>
+
+                <!-- Assessment Title -->
+                <div style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 8px; line-height: 1.3;" x-text="item.title"></div>
+
+                <!-- Meta Pills: Session & Weight -->
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                  <span
+                    x-show="item.sessionNumber"
+                    style="font-size: 0.75rem; background: var(--bg); border: 1px solid var(--surface-border); padding: 2px 8px; border-radius: 6px; font-weight: 600; color: var(--text-muted);"
+                    x-text="'Sesi ' + item.sessionNumber"
+                  ></span>
+                  <span
+                    x-show="item.lamWeight"
+                    style="font-size: 0.75rem; background: var(--bg); border: 1px solid var(--surface-border); padding: 2px 8px; border-radius: 6px; font-weight: 600; color: var(--text-muted);"
+                    x-text="'Bobot: ' + item.lamWeight"
+                  ></span>
+                  <span
+                    x-show="item.isScored && item.scorePts !== null && item.scorePts !== undefined"
+                    style="font-size: 0.75rem; background: var(--success-bg); color: var(--success); border: 1px solid rgba(22, 163, 74, 0.3); padding: 2px 8px; border-radius: 6px; font-weight: 700;"
+                    x-text="'Nilai: ' + item.scorePts"
+                  ></span>
+                </div>
+              </div>
+
+              <!-- Card Dates & Link (Right on desktop) -->
+              <div class="assessment-card-dates">
+                <div class="date-info-box" style="margin-top: 0; min-width: 260px;">
+                  <!-- Start Date -->
+                  <div class="date-row">
+                    <span style="color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
+                      <span>📅</span> Mulai:
+                    </span>
+                    <span style="font-weight: 600; color: var(--text);" x-text="formatScheduleDate(item.dateStart)"></span>
+                  </div>
+                  <!-- End Date / Due Date -->
+                  <div class="date-row">
+                    <span style="color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
+                      <span>⏰</span> Tenggat:
+                    </span>
+                    <span style="font-weight: 700;" :style="getCardAvailability(item).key === 'overdue' ? 'color: var(--danger);' : (getCardAvailability(item).key === 'urgent' ? 'color: var(--warning);' : 'color: var(--text);')" x-text="formatScheduleDate(item.dueDate)"></span>
+                  </div>
+                  <!-- Relative countdown -->
+                  <div style="text-align: right; font-size: 0.75rem; font-weight: 600; margin-top: 2px;"
+                       :style="getCardAvailability(item).key === 'overdue' ? 'color: var(--danger);' : (getCardAvailability(item).key === 'urgent' ? 'color: var(--warning);' : 'color: var(--primary);')"
+                       x-text="formatRelativeDate(item)">
+                  </div>
+                </div>
+
+                <!-- Footer link to LMS -->
+                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 0.8rem; font-weight: 600; color: var(--primary); margin-top: 2px;">
+                  <span>Buka di LMS</span>
+                  <span>↗</span>
+                </div>
+              </div>
             </div>
+          </template>
+        </div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Modal Answers Overlay -->
+      <div
+        class="modal-overlay"
+        :class="{ 'active': isModalOpen }"
+        x-show="isModalOpen"
+        @click.self="closeCommentsModal()"
+        @keydown.escape.window="closeCommentsModal()"
+      >
+        <div class="modal-container">
+          <div class="modal-header">
+            <div class="modal-title-area">
+              <h3 id="modalThreadTitle" x-text="modalThread?.title || 'Pertanyaan Forum'">Judul Pertanyaan</h3>
+              <p id="modalThreadSubtitle" x-text="modalSubtitle">Memuat jawaban...</p>
+            </div>
+            <button
+              class="modal-close-btn"
+              @click="closeCommentsModal()"
+              title="Tutup (Esc)"
+            >
+              ✕
+            </button>
           </div>
 
-          <!-- Section List Semua Jawaban -->
-          <div>
-            <div
-              style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                margin-bottom: 12px;
-              "
-            >
-              <h4 style="font-size: 0.95rem; font-weight: 700">
-                Semua Jawaban Diskusi
-              </h4>
-              <span id="modalTotalCommentsBadge" class="badge badge-session"
-                >0 Jawaban</span
-              >
+          <div class="modal-body" id="modalCommentsBody">
+            <!-- Pinned / Highlight Jawaban Anda -->
+            <div id="modalPinnedSection">
+              <template x-if="pinnedComment">
+                <div class="pinned-my-answer">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+                    <span class="pinned-badge">⭐ Jawaban Anda (Dipin)</span>
+                    <span class="comment-date" style="font-weight:600;" x-text="`📅 ${formatDisplayDate(pinnedComment.postDate)}`"></span>
+                  </div>
+                  <div class="comment-text-body" x-html="renderCommentBody(pinnedComment.commentText)"></div>
+                </div>
+              </template>
+
+              <template x-if="!pinnedComment && modalThread && modalThread.hasReplied">
+                <div class="pinned-my-answer">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
+                    <span class="pinned-badge">⭐ Jawaban Anda</span>
+                    <span class="comment-date" x-text="`📅 ${formatDisplayDate(modalThread.replyDate)}`"></span>
+                  </div>
+                  <div class="comment-text-body">
+                    <p x-text="modalThread.replyText || 'Anda telah menjawab pertanyaan ini (jawaban lengkap tersimpan di server).'"></p>
+                  </div>
+                </div>
+              </template>
+
+              <template x-if="!pinnedComment && (!modalThread || !modalThread.hasReplied)">
+                <div style="background:var(--bg); border:1px dashed var(--surface-border); border-radius:10px; padding:12px 16px; font-size:0.875rem; color:var(--text-muted); display:flex; align-items:center; gap:10px;">
+                  <span style="font-size:1.2rem;">📝</span>
+                  <span>Anda belum menjawab pertanyaan ini. Anda dapat langsung menuliskan jawaban pada form di bawah.</span>
+                </div>
+              </template>
             </div>
 
-            <div id="modalCommentsList" class="comment-list">
-              <!-- Comments injected here -->
-            </div>
-
-            <div
-              id="modalLoadingSpinner"
-              style="text-align: center; padding: 20px; display: none"
-            >
-              <span
-                class="spinner"
+            <!-- Form Tambah Jawaban di Dalam Modal -->
+            <div class="modal-reply-box">
+              <label
                 style="
-                  border-top-color: var(--primary);
-                  width: 24px;
-                  height: 24px;
-                "
-              ></span>
-              <p
-                style="
-                  font-size: 0.85rem;
+                  font-size: 0.8rem;
+                  font-weight: 600;
+                  text-transform: uppercase;
                   color: var(--text-muted);
-                  margin-top: 8px;
+                  display: block;
+                  margin-bottom: 6px;
                 "
               >
-                Memuat jawaban...
-              </p>
+                ✍️ Kirim Jawaban Cepat
+              </label>
+              <textarea
+                id="modalReplyText"
+                x-model="modalReplyText"
+                placeholder="Tulis jawaban Anda di sini..."
+              ></textarea>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-top: 8px;
+                  gap: 12px;
+                  flex-wrap: wrap;
+                "
+              >
+                <button
+                  class="btn btn-primary"
+                  id="modalSubmitBtn"
+                  :disabled="modalSubmitting"
+                  @click="submitModalAnswer()"
+                >
+                  🚀 Kirim Jawaban
+                </button>
+                <span
+                  class="submit-feedback"
+                  :class="modalFeedbackClass"
+                  x-text="modalFeedbackText"
+                ></span>
+              </div>
             </div>
 
-            <div
-              class="load-more-container"
-              id="modalLoadMoreContainer"
-              style="display: none; margin-top: 16px"
-            >
-              <button
-                class="btn btn-secondary"
-                id="modalLoadMoreBtn"
-                onclick="loadMoreModalComments()"
-                style="width: 100%"
+            <!-- Section List Semua Jawaban -->
+            <div>
+              <div
+                style="
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  margin-bottom: 12px;
+                "
               >
-                ⬇️ Muat Lebih Banyak Jawaban
-              </button>
+                <h4 style="font-size: 0.95rem; font-weight: 700">
+                  Semua Jawaban Diskusi
+                </h4>
+                <span id="modalTotalCommentsBadge" class="badge badge-session" x-text="`${modalCommentsList.length} dari ${modalTotalComments} Jawaban`">
+                  0 Jawaban
+                </span>
+              </div>
+
+              <div id="modalCommentsList" class="comment-list" x-html="commentTreeHtml">
+                <!-- Comments injected reactively -->
+              </div>
+
+              <div
+                id="modalLoadingSpinner"
+                x-show="modalIsLoading"
+                style="text-align: center; padding: 20px;"
+              >
+                <span
+                  class="spinner"
+                  style="
+                    border-top-color: var(--primary);
+                    width: 24px;
+                    height: 24px;
+                  "
+                ></span>
+                <p
+                  style="
+                    font-size: 0.85rem;
+                    color: var(--text-muted);
+                    margin-top: 8px;
+                  "
+                >
+                  Memuat jawaban...
+                </p>
+              </div>
+
+              <div
+                class="load-more-container"
+                id="modalLoadMoreContainer"
+                x-show="modalCommentsList.length < modalTotalComments && !modalIsLoading"
+                style="margin-top: 16px"
+              >
+                <button
+                  class="btn btn-secondary"
+                  id="modalLoadMoreBtn"
+                  :disabled="modalIsLoading"
+                  @click="loadMoreModalComments()"
+                  style="width: 100%"
+                  x-text="`⬇️ Muat Lebih Banyak (${modalCommentsList.length} / ${modalTotalComments})`"
+                >
+                  ⬇️ Muat Lebih Banyak Jawaban
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -908,805 +1775,1002 @@
     </div>
 
     <script>
-      let currentCourses = [];
-      let currentThreads = [];
-      let currentClassId = "";
-      let currentUserId = "";
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("lmsApp", () => ({
+          currentTab: "forum",
+          user: null,
+          authError: null,
+          isRelogging: false,
+          statusBarText: "Ready.",
 
-      // Modal state
-      let activeModalThreadId = null;
-      let modalCurrentPage = 1;
-      let modalTotalComments = 0;
-      let modalCommentsList = [];
-      let modalIsLoading = false;
+          periods: [],
+          selectedPeriod: "",
+          isLoadingPeriods: false,
 
-      // On page load
-      document.addEventListener("DOMContentLoaded", () => {
-        loadInitData();
-      });
+          courses: [],
+          selectedCourseIndex: "",
+          currentClassId: "",
+          subjectPlaceholder: "Select subject...",
 
-      async function loadInitData() {
-        setStatus("⏳ Initializing session and loading academic periods...");
-        try {
-          const res = await fetch("/api/init");
-          const data = await res.json();
+          sessions: [],
+          selectedSessionId: "",
+          sessionPlaceholder: "Loading sessions...",
 
-          if (data.error) {
-            setStatus(`⚠️ ${data.error}`);
-            document.getElementById("userPill").innerHTML =
-              `<span style="color:var(--danger)">Not authenticated</span>`;
-            return;
-          }
+          threads: [],
+          isLoadingPosts: false,
+          unansweredOnly: false,
+          fetchAbortController: null,
 
-          // Render user pill
-          const user = data.user;
-          document.getElementById("userPill").innerHTML = `
-          <strong>${user.name}</strong>
-          <span>•</span>
-          <span>${user.role} (${user.academicCareer})</span>
-        `;
+          // Thread answer forms state: map threadId -> { text, isSubmitting, feedbackText, feedbackClass }
+          cardReplies: {},
 
-          // Render periods
-          const periodSelect = document.getElementById("periodSelect");
-          periodSelect.innerHTML = "";
-          data.periods.forEach((p) => {
-            const opt = document.createElement("option");
-            opt.value = p.code;
-            opt.textContent = `${p.code} - ${p.description}${p.isRunning ? " (Active)" : ""}`;
-            if (p.code === data.activePeriod) {
-              opt.selected = true;
+          // Modal state
+          isModalOpen: false,
+          activeModalThreadId: null,
+          modalThread: null,
+          modalCurrentPage: 1,
+          modalTotalComments: 0,
+          modalCommentsList: [],
+          modalIsLoading: false,
+          modalReplyText: "",
+          modalSubmitting: false,
+          modalFeedbackText: "",
+          modalFeedbackClass: "",
+          currentUserId: "",
+          modalErrorMessage: "",
+
+          // Schedule state
+          schedulePeriod: "",
+          scheduleLoading: false,
+          scheduleLoaded: false,
+          scheduleError: null,
+          scheduleAssessments: [],
+          scheduleSubjects: [],
+          scheduleCategories: ["LEC", "LAB"],
+          scheduleSelectedSubjects: [],
+          scheduleSelectedTypes: [
+            "personal_assignment", "team_assignment", "quiz", "project_team", "forum_discussion", "attendance", "other"
+          ],
+          scheduleAvailabilityFilter: "open",
+          scheduleSearchQuery: "",
+
+          init() {
+            this.loadInitData();
+            this.$watch("isModalOpen", (val) => {
+              document.body.style.overflow = val ? "hidden" : "";
+            });
+            this.$watch("currentTab", (val) => {
+              if (val === "schedule" && !this.scheduleLoaded) {
+                this.loadScheduleAssessments();
+              }
+            });
+          },
+
+          // Computed getters
+          get filteredThreads() {
+            return this.threads.filter((t) => {
+              if (this.unansweredOnly && t.hasReplied) {
+                return false;
+              }
+              return true;
+            });
+          },
+
+          get countBarText() {
+            if (!this.threads.length) return "";
+            return `Showing ${this.filteredThreads.length} of ${this.threads.length} posts`;
+          },
+
+          get selectedCourse() {
+            if (this.selectedCourseIndex === "" || !this.courses[this.selectedCourseIndex]) {
+              return null;
             }
-            periodSelect.appendChild(opt);
-          });
+            return this.courses[this.selectedCourseIndex];
+          },
 
-          // Set courses
-          renderSubjectOptions(data.courses);
+          get selectedSession() {
+            return this.sessions.find((s) => s.sessionId === this.selectedSessionId) || null;
+          },
 
-          setStatus("✅ Ready.");
-          if (data.courses.length > 0) {
-            onSubjectChange();
-          }
-        } catch (err) {
-          setStatus(`❌ Network error initializing: ${err.message}`);
-        }
-      }
+          get selectedSessionText() {
+            const s = this.selectedSession;
+            if (!s) return "";
+            return `Session ${s.classSessionNumber}: ${s.topicName}`;
+          },
 
-      function renderSubjectOptions(courses) {
-        currentCourses = courses || [];
-        const select = document.getElementById("subjectSelect");
-        select.innerHTML = "";
-
-        if (currentCourses.length === 0) {
-          select.innerHTML = `<option value="">No subjects found for this period</option>`;
-          return;
-        }
-
-        currentCourses.forEach((c, idx) => {
-          const opt = document.createElement("option");
-          opt.value = idx;
-          opt.textContent = c.courseName;
-          select.appendChild(opt);
-        });
-      }
-
-      async function onPeriodChange() {
-        const period = document.getElementById("periodSelect").value;
-        if (!period) return;
-        setStatus(`⏳ Fetching subjects for period ${period}...`);
-        try {
-          const res = await fetch(
-            `/api/subjects?period=${encodeURIComponent(period)}`,
-          );
-          const data = await res.json();
-          renderSubjectOptions(data.courses);
-          setStatus(`✅ Loaded ${data.courses.length} subjects.`);
-          if (data.courses.length > 0) {
-            onSubjectChange();
-          } else {
-            document.getElementById("postsFeed").innerHTML = `
-            <div class="empty-state">
-              <h3>No subjects found for period ${period}</h3>
-            </div>
-          `;
-          }
-        } catch (err) {
-          setStatus(`❌ Error loading subjects: ${err.message}`);
-        }
-      }
-
-      async function onSubjectChange() {
-        const subjectIdx = document.getElementById("subjectSelect").value;
-        if (subjectIdx === "" || !currentCourses[subjectIdx]) {
-          setStatus("⚠️ Please select a subject first.");
-          return;
-        }
-
-        const course = currentCourses[subjectIdx];
-        const classId = course.classId;
-        currentClassId = classId;
-        const sessionSelect = document.getElementById("sessionSelect");
-        sessionSelect.innerHTML = `<option value="">Loading sessions...</option>`;
-        setStatus(`⏳ Loading sessions for ${course.courseName}...`);
-
-        try {
-          const res = await fetch(
-            `/api/sessions?class_id=${encodeURIComponent(classId)}`,
-          );
-          const data = await res.json();
-
-          if (data.error) {
-            setStatus(`❌ Error loading sessions: ${data.error}`);
-            sessionSelect.innerHTML = `<option value="ALL">All Sessions</option>`;
-            return;
-          }
-
-          const sessions = data.sessions || [];
-          sessionSelect.innerHTML = "";
-
-          if (sessions.length === 0) {
-            sessionSelect.innerHTML = `<option value="">No sessions available</option>`;
-            return;
-          }
-
-          let activeOptionVal = null;
-          sessions.forEach((s) => {
-            const opt = document.createElement("option");
-            opt.value = s.sessionId;
-            let label = `Session ${s.classSessionNumber}: ${s.topicName}`;
-            if (s.isActive) {
-              label += " ⭐ (Active)";
-              activeOptionVal = s.sessionId;
+          get emptyStateTitle() {
+            if (this.unansweredOnly && this.threads.length > 0) {
+              return "All questions in this session have already been answered!";
             }
-            opt.textContent = label;
-            sessionSelect.appendChild(opt);
-          });
+            return "No lecturer posts found in this session.";
+          },
 
-          // By default, select the current active session of the current subject!
-          if (activeOptionVal) {
-            sessionSelect.value = activeOptionVal;
-          } else if (data.activeSessionId) {
-            sessionSelect.value = data.activeSessionId;
-          } else if (sessions.length > 0) {
-            sessionSelect.value = sessions[sessions.length - 1].sessionId;
-          }
-
-          // Fetch posts for the active session
-          fetchPosts();
-        } catch (err) {
-          setStatus(`❌ Error loading sessions: ${err.message}`);
-        }
-      }
-
-      function onSessionChange() {
-        fetchPosts();
-      }
-
-      let fetchAbortController = null;
-
-      async function fetchPosts() {
-        const subjectIdx = document.getElementById("subjectSelect").value;
-        if (subjectIdx === "" || !currentCourses[subjectIdx]) {
-          setStatus("⚠️ Please select a subject first.");
-          return;
-        }
-
-        const course = currentCourses[subjectIdx];
-        const classId = course.classId;
-        currentClassId = classId;
-        const sessionSelect = document.getElementById("sessionSelect");
-        const sessionId = sessionSelect.value;
-        if (!sessionId) {
-          setStatus("⚠️ Please select a session.");
-          return;
-        }
-
-        if (fetchAbortController) {
-          fetchAbortController.abort();
-        }
-        fetchAbortController = new AbortController();
-
-        const fetchBtn = document.getElementById("fetchBtn");
-        fetchBtn.disabled = true;
-        fetchBtn.innerHTML = `<span class="spinner"></span> Loading...`;
-
-        const selectedOptionText = sessionSelect.options[
-          sessionSelect.selectedIndex
-        ]
-          ? sessionSelect.options[sessionSelect.selectedIndex].text
-          : "";
-        setStatus(
-          `⏳ Fetching posts for ${course.courseName} (${selectedOptionText})...`,
-        );
-
-        try {
-          const url = `/api/posts?class_id=${encodeURIComponent(classId)}&session_id=${encodeURIComponent(sessionId)}`;
-          const res = await fetch(url, { signal: fetchAbortController.signal });
-          const data = await res.json();
-
-          if (data.error) {
-            setStatus(`❌ ${data.error}`);
-            document.getElementById("postsFeed").innerHTML = `
-            <div class="empty-state">
-              <h3>Error loading forum posts</h3>
-              <p>${data.error}</p>
-            </div>
-          `;
-            return;
-          }
-
-          currentThreads = data.threads || [];
-          renderThreads();
-          setStatus(
-            `✅ Loaded ${currentThreads.length} lecturer posts for ${course.courseName}.`,
-          );
-        } catch (err) {
-          if (err.name === "AbortError") return;
-          setStatus(`❌ Network error fetching posts: ${err.message}`);
-        } finally {
-          fetchBtn.disabled = false;
-          fetchBtn.innerHTML = `🔄 Fetch Posts`;
-        }
-      }
-
-      function filterPostsClientSide() {
-        renderThreads();
-      }
-
-      function formatDisplayDate(dateStr) {
-        if (!dateStr) return "-";
-        try {
-          const clean = dateStr.replace("Z", "");
-          const d = new Date(clean);
-          if (isNaN(d.getTime())) return dateStr;
-          return d.toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-        } catch (e) {
-          return dateStr;
-        }
-      }
-
-      function renderThreads() {
-        const container = document.getElementById("postsFeed");
-        const sessionSelect = document.getElementById("sessionSelect");
-        const unansweredOnly =
-          document.getElementById("unansweredOnly").checked;
-        const selectedSessionText = sessionSelect.options[
-          sessionSelect.selectedIndex
-        ]
-          ? sessionSelect.options[sessionSelect.selectedIndex].text
-          : "";
-
-        let filtered = currentThreads.filter((t) => {
-          if (unansweredOnly && t.hasReplied) {
-            return false;
-          }
-          return true;
-        });
-
-        document.getElementById("countBar").textContent =
-          `Showing ${filtered.length} of ${currentThreads.length} posts`;
-
-        if (filtered.length === 0) {
-          let msg = "No lecturer posts found in this session.";
-          let tip =
-            "Try selecting another session from the Session Filter dropdown above.";
-          if (unansweredOnly && currentThreads.length > 0) {
-            msg = "All questions in this session have already been answered!";
-            tip = "Uncheck 'Show Unanswered Only' to review your answers.";
-          }
-
-          container.innerHTML = `
-          <div class="empty-state">
-            <h3>${msg}</h3>
-            <p>${selectedSessionText ? "Filter: " + selectedSessionText : ""}</p>
-            <p style="margin-top: 10px; font-size: 0.9rem; color: var(--primary);">${tip}</p>
-          </div>
-        `;
-          return;
-        }
-
-        container.innerHTML = "";
-        filtered.forEach((t, i) => {
-          const card = document.createElement("div");
-          card.className = "card";
-          card.id = `card-${t.threadId}`;
-
-          const statusBadge = t.hasReplied
-            ? `<span class="badge badge-replied">🟢 Replied by You</span>`
-            : `<span class="badge badge-unanswered">🟠 Not Replied Yet</span>`;
-
-          let replyNoticeHtml = "";
-          if (t.hasReplied && t.replyDate) {
-            replyNoticeHtml = `
-            <div class="replied-notice">
-              <span>✅</span>
-              <span>Sudah dijawab pada: <strong>${formatDisplayDate(t.replyDate)}</strong></span>
-            </div>
-          `;
-          }
-
-          card.innerHTML = `
-          <div class="card-header">
-            <div>
-              <div class="thread-title">📌 ${escapeHtml(t.title)}</div>
-              <div class="badge-group" style="margin-top: 8px;">
-                <span class="badge badge-session">🏷️ Session ${t.sessionNumber}: ${escapeHtml(t.topicName || "")}</span>
-                <span class="badge badge-lecturer">👨‍🏫 ${escapeHtml(t.authorName)} (${t.authorRole})</span>
-                ${statusBadge}
-              </div>
-            </div>
-          </div>
-
-          <div class="question-box">
-            <h4>Question Prompt</h4>
-            <div>${escapeHtml(t.questionText)}</div>
-          </div>
-
-          <div style="margin-bottom: 14px;">
-            <button class="btn btn-secondary" onclick="openCommentsModal('${t.threadId}')">
-              💬 Lihat Semua Jawaban
-            </button>
-          </div>
-
-          ${replyNoticeHtml}
-
-          <div class="answer-area">
-            <label style="font-size:0.8rem; font-weight:600; text-transform:uppercase; color:var(--text-muted); display:block; margin-bottom:6px;">
-              ✍️ ${t.hasReplied ? "Kirim Jawaban Tambahan" : "Jawaban Anda"}
-            </label>
-            <textarea id="reply-${t.threadId}" placeholder="Type your answer here..."></textarea>
-            <div class="card-actions">
-              <button class="btn btn-primary" onclick="submitAnswer('${t.threadId}')">
-                🚀 Submit Answer
-              </button>
-              <span class="submit-feedback" id="feedback-${t.threadId}"></span>
-            </div>
-          </div>
-        `;
-          container.appendChild(card);
-        });
-      }
-
-      async function submitAnswer(threadId) {
-        const textarea = document.getElementById(`reply-${threadId}`);
-        const feedback = document.getElementById(`feedback-${threadId}`);
-        const answerText = textarea.value.trim();
-
-        if (!answerText) {
-          feedback.className = "submit-feedback error";
-          feedback.textContent = "⚠️ Answer cannot be empty.";
-          return;
-        }
-
-        feedback.className = "submit-feedback";
-        feedback.textContent = "Submitting answer...";
-
-        const threadObj = currentThreads.find((x) => x.threadId === threadId);
-
-        try {
-          const res = await fetch("/api/answer", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              thread_id: threadId,
-              answer_text: answerText,
-              class_id: currentClassId,
-              session_id: threadObj ? threadObj.sessionId : null,
-            }),
-          });
-
-          const data = await res.json();
-          if (data.success) {
-            feedback.className = "submit-feedback success";
-            feedback.textContent = "🎉 Answer posted successfully!";
-            textarea.value = "";
-
-            // Update local memory & UI
-            if (threadObj) {
-              threadObj.hasReplied = true;
-              threadObj.replyText = answerText;
-              threadObj.replyDate = new Date().toISOString();
+          get emptyStateTip() {
+            if (this.unansweredOnly && this.threads.length > 0) {
+              return "Uncheck 'Show Unanswered Only' to review your answers.";
             }
-            // Re-render
-            setTimeout(() => {
-              renderThreads();
-            }, 800);
-          } else {
-            feedback.className = "submit-feedback error";
-            feedback.textContent = `❌ Failed: ${data.error}`;
-          }
-        } catch (err) {
-          feedback.className = "submit-feedback error";
-          feedback.textContent = `❌ Error: ${err.message}`;
-        }
-      }
+            return "Try selecting another session from the Session Filter dropdown above.";
+          },
 
-      async function triggerRelogin() {
-        const btn = document.getElementById("reloginBtn");
-        btn.disabled = true;
-        btn.textContent = "Opening Chrome...";
-        setStatus(
-          "🌐 Chrome opened. Please log in to Binus LMS in the browser window...",
-        );
+          get modalSubtitle() {
+            if (!this.modalThread) return "Memuat diskusi...";
+            return `Session ${this.modalThread.sessionNumber || "-"}: ${this.modalThread.topicName || ""} • Dosen: ${this.modalThread.authorName || "Instructor"} (${this.modalThread.authorRole || ""})`;
+          },
 
-        try {
-          const res = await fetch("/api/relogin", { method: "POST" });
-          const data = await res.json();
-          if (data.success) {
-            setStatus(`🎉 Login successful for ${data.name}!`);
-            loadInitData();
-          } else {
-            setStatus(`❌ Login failed: ${data.error}`);
-          }
-        } catch (err) {
-          setStatus(`❌ Error: ${err.message}`);
-        } finally {
-          btn.disabled = false;
-          btn.textContent = "🔑 Re-Login";
-        }
-      }
+          get pinnedComment() {
+            if (!this.modalCommentsList || !this.modalCommentsList.length || !this.currentUserId) {
+              return null;
+            }
+            let found = null;
+            const traverse = (list) => {
+              if (!list || found) return;
+              for (const item of list) {
+                if (item.authorId === this.currentUserId) {
+                  found = item;
+                  return;
+                }
+                if (item.replies && Array.isArray(item.replies)) {
+                  traverse(item.replies);
+                }
+              }
+            };
+            traverse(this.modalCommentsList);
+            return found;
+          },
 
-      function setStatus(msg) {
-        document.getElementById("statusBar").textContent = msg;
-      }
+          get commentTreeHtml() {
+            if (this.modalErrorMessage) {
+              return `<div style="text-align:center; padding:20px; color:var(--danger);">${this.escapeHtml(this.modalErrorMessage)}</div>`;
+            }
+            if (!this.modalCommentsList || this.modalCommentsList.length === 0) {
+              return `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:0.9rem;">Belum ada jawaban dari mahasiswa lain pada pertanyaan ini.</div>`;
+            }
+            return this.modalCommentsList
+              .map((c) => this.renderSingleCommentCard(c, this.currentUserId, false))
+              .join("");
+          },
 
-      function escapeHtml(str) {
-        if (!str) return "";
-        return str
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;");
-      }
+          getReplyState(threadId) {
+            if (!this.cardReplies[threadId]) {
+              this.cardReplies[threadId] = {
+                text: "",
+                isSubmitting: false,
+                feedbackText: "",
+                feedbackClass: "",
+              };
+            }
+            return this.cardReplies[threadId];
+          },
 
-      // Modal management functions
-      function openCommentsModal(threadId) {
-        activeModalThreadId = threadId;
-        modalCurrentPage = 1;
-        modalCommentsList = [];
-        modalTotalComments = 0;
+          // Methods
+          async loadInitData() {
+            this.statusBarText = "⏳ Initializing session and loading academic periods...";
+            this.isLoadingPeriods = true;
+            try {
+              const res = await fetch("/api/init");
+              const data = await res.json();
 
-        const threadObj = currentThreads.find((x) => x.threadId === threadId);
-        const titleElem = document.getElementById("modalThreadTitle");
-        const subElem = document.getElementById("modalThreadSubtitle");
-        const textarea = document.getElementById("modalReplyText");
-        const feedback = document.getElementById("modalFeedback");
+              if (data.error) {
+                this.statusBarText = `⚠️ ${data.error}`;
+                this.authError = "Not authenticated";
+                return;
+              }
 
-        if (threadObj) {
-          titleElem.textContent = threadObj.title || "Pertanyaan Forum";
-          subElem.textContent = `Session ${threadObj.sessionNumber || "-"}: ${threadObj.topicName || ""} • Dosen: ${threadObj.authorName || "Instructor"} (${threadObj.authorRole || ""})`;
-        } else {
-          titleElem.textContent = "Pertanyaan Forum";
-          subElem.textContent = "Memuat diskusi...";
-        }
+              this.authError = null;
+              this.user = data.user;
+              this.periods = data.periods || [];
+              this.selectedPeriod = data.activePeriod || (this.periods[0] ? this.periods[0].code : "");
+              this.schedulePeriod = this.selectedPeriod;
+              this.courses = data.courses || [];
+              this.selectedCourseIndex = this.courses.length > 0 ? 0 : "";
 
-        if (textarea) textarea.value = "";
-        if (feedback) {
-          feedback.className = "submit-feedback";
-          feedback.textContent = "";
-        }
+              this.statusBarText = "✅ Ready.";
+              if (this.courses.length > 0) {
+                await this.onSubjectChange();
+              }
+            } catch (err) {
+              this.statusBarText = `❌ Network error initializing: ${err.message}`;
+            } finally {
+              this.isLoadingPeriods = false;
+            }
+          },
 
-        document.getElementById("modalPinnedSection").innerHTML = "";
-        document.getElementById("modalCommentsList").innerHTML = "";
-        document.getElementById("modalTotalCommentsBadge").textContent =
-          "0 Jawaban";
-        document.getElementById("modalLoadMoreContainer").style.display =
-          "none";
+          async onPeriodChange() {
+            if (!this.selectedPeriod) return;
+            this.statusBarText = `⏳ Fetching subjects for period ${this.selectedPeriod}...`;
+            this.courses = [];
+            this.selectedCourseIndex = "";
+            this.sessions = [];
+            this.selectedSessionId = "";
+            this.threads = [];
+            try {
+              const res = await fetch(`/api/subjects?period=${encodeURIComponent(this.selectedPeriod)}`);
+              const data = await res.json();
+              this.courses = data.courses || [];
+              this.statusBarText = `✅ Loaded ${this.courses.length} subjects.`;
+              if (this.courses.length > 0) {
+                this.selectedCourseIndex = 0;
+                await this.onSubjectChange();
+              } else {
+                this.subjectPlaceholder = `No subjects found for period ${this.selectedPeriod}`;
+              }
+            } catch (err) {
+              this.statusBarText = `❌ Error loading subjects: ${err.message}`;
+            }
+          },
 
-        const overlay = document.getElementById("commentsModalOverlay");
-        overlay.classList.add("active");
-        document.body.style.overflow = "hidden";
-
-        fetchModalComments(1, false);
-      }
-
-      function closeCommentsModal() {
-        const overlay = document.getElementById("commentsModalOverlay");
-        overlay.classList.remove("active");
-        document.body.style.overflow = "";
-        activeModalThreadId = null;
-      }
-
-      function handleModalOverlayClick(event) {
-        if (event.target.id === "commentsModalOverlay") {
-          closeCommentsModal();
-        }
-      }
-
-      document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape") {
-          const overlay = document.getElementById("commentsModalOverlay");
-          if (overlay && overlay.classList.contains("active")) {
-            closeCommentsModal();
-          }
-        }
-      });
-
-      async function fetchModalComments(page = 1, append = false) {
-        if (!activeModalThreadId || !currentClassId) return;
-        if (modalIsLoading) return;
-
-        modalIsLoading = true;
-        const spinner = document.getElementById("modalLoadingSpinner");
-        const loadMoreContainer = document.getElementById(
-          "modalLoadMoreContainer",
-        );
-        const loadMoreBtn = document.getElementById("modalLoadMoreBtn");
-
-        spinner.style.display = "block";
-        loadMoreContainer.style.display = "none";
-
-        try {
-          const url = `/api/comments?class_id=${encodeURIComponent(currentClassId)}&thread_id=${encodeURIComponent(activeModalThreadId)}&page=${page}&limit=25`;
-          const res = await fetch(url);
-          const data = await res.json();
-
-          if (data.error) {
-            document.getElementById("modalCommentsList").innerHTML = `
-            <div style="text-align:center; padding:20px; color:var(--danger);">
-              Gagal memuat jawaban: ${escapeHtml(data.error)}
-            </div>
-          `;
-            return;
-          }
-
-          if (data.currentUserId) {
-            currentUserId = data.currentUserId;
-          }
-
-          modalTotalComments = data.total || 0;
-          const newComments = data.comments || [];
-
-          if (append) {
-            modalCommentsList = modalCommentsList.concat(newComments);
-          } else {
-            modalCommentsList = newComments;
-          }
-
-          const threadObj = currentThreads.find(
-            (x) => x.threadId === activeModalThreadId,
-          );
-          renderPinnedSection(modalCommentsList, currentUserId, threadObj);
-
-          const listContainer = document.getElementById("modalCommentsList");
-          listContainer.innerHTML = renderCommentTree(
-            modalCommentsList,
-            currentUserId,
-          );
-
-          const badge = document.getElementById("modalTotalCommentsBadge");
-          badge.textContent = `${modalCommentsList.length} dari ${modalTotalComments} Jawaban`;
-
-          if (modalCommentsList.length < modalTotalComments) {
-            loadMoreContainer.style.display = "block";
-            loadMoreBtn.textContent = `⬇️ Muat Lebih Banyak (${modalCommentsList.length} / ${modalTotalComments})`;
-          } else {
-            loadMoreContainer.style.display = "none";
-          }
-        } catch (err) {
-          document.getElementById("modalCommentsList").innerHTML = `
-          <div style="text-align:center; padding:20px; color:var(--danger);">
-            Network error: ${escapeHtml(err.message)}
-          </div>
-        `;
-        } finally {
-          modalIsLoading = false;
-          spinner.style.display = "none";
-        }
-      }
-
-      function loadMoreModalComments() {
-        if (modalIsLoading) return;
-        modalCurrentPage += 1;
-        fetchModalComments(modalCurrentPage, true);
-      }
-
-      function renderPinnedSection(comments, currentUserId, threadObj) {
-        const container = document.getElementById("modalPinnedSection");
-        if (!container) return;
-
-        let myComment = null;
-        function findMyComment(list) {
-          if (!list || myComment) return;
-          for (const item of list) {
-            if (currentUserId && item.authorId === currentUserId) {
-              myComment = item;
+          async onSubjectChange() {
+            if (this.selectedCourseIndex === "" || !this.courses[this.selectedCourseIndex]) {
+              this.statusBarText = "⚠️ Please select a subject first.";
               return;
             }
-            if (
-              item.replies &&
-              Array.isArray(item.replies) &&
-              item.replies.length > 0
-            ) {
-              findMyComment(item.replies);
+
+            const course = this.courses[this.selectedCourseIndex];
+            this.currentClassId = course.classId;
+            this.sessions = [];
+            this.selectedSessionId = "";
+            this.sessionPlaceholder = "Loading sessions...";
+            this.statusBarText = `⏳ Loading sessions for ${course.courseName}...`;
+
+            try {
+              const res = await fetch(`/api/sessions?class_id=${encodeURIComponent(this.currentClassId)}`);
+              const data = await res.json();
+
+              if (data.error) {
+                this.statusBarText = `❌ Error loading sessions: ${data.error}`;
+                this.sessions = [{ sessionId: "ALL", classSessionNumber: 0, topicName: "All Sessions", isActive: false }];
+                this.selectedSessionId = "ALL";
+                return;
+              }
+
+              this.sessions = data.sessions || [];
+              if (this.sessions.length === 0) {
+                this.sessionPlaceholder = "No sessions available";
+                return;
+              }
+
+              const activeSession = this.sessions.find((s) => s.isActive);
+              if (activeSession) {
+                this.selectedSessionId = activeSession.sessionId;
+              } else if (data.activeSessionId) {
+                this.selectedSessionId = data.activeSessionId;
+              } else {
+                this.selectedSessionId = this.sessions[this.sessions.length - 1].sessionId;
+              }
+
+              await this.fetchPosts();
+            } catch (err) {
+              this.statusBarText = `❌ Error loading sessions: ${err.message}`;
             }
-          }
-        }
-        findMyComment(comments);
+          },
 
-        if (myComment) {
-          container.innerHTML = `
-          <div class="pinned-my-answer">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-              <span class="pinned-badge">⭐ Jawaban Anda (Dipin)</span>
-              <span class="comment-date" style="font-weight:600;">📅 ${formatDisplayDate(myComment.postDate)}</span>
-            </div>
-            <div class="comment-text-body">
-              ${renderCommentBody(myComment.commentText)}
-            </div>
-          </div>
-        `;
-        } else if (threadObj && threadObj.hasReplied) {
-          container.innerHTML = `
-          <div class="pinned-my-answer">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:8px;">
-              <span class="pinned-badge">⭐ Jawaban Anda</span>
-              <span class="comment-date">📅 ${formatDisplayDate(threadObj.replyDate)}</span>
-            </div>
-            <div class="comment-text-body">
-              <p>${escapeHtml(threadObj.replyText || "Anda telah menjawab pertanyaan ini (jawaban lengkap tersimpan di server).")}</p>
-            </div>
-          </div>
-        `;
-        } else {
-          container.innerHTML = `
-          <div style="background:var(--bg); border:1px dashed var(--surface-border); border-radius:10px; padding:12px 16px; font-size:0.875rem; color:var(--text-muted); display:flex; align-items:center; gap:10px;">
-            <span style="font-size:1.2rem;">📝</span>
-            <span>Anda belum menjawab pertanyaan ini. Anda dapat langsung menuliskan jawaban pada form di bawah.</span>
-          </div>
-        `;
-        }
-      }
+          onSessionChange() {
+            this.fetchPosts();
+          },
 
-      function renderCommentTree(comments, currentUserId) {
-        if (!comments || comments.length === 0) {
-          return `<div style="text-align:center; padding:30px; color:var(--text-muted); font-size:0.9rem;">Belum ada jawaban dari mahasiswa lain pada pertanyaan ini.</div>`;
-        }
+          async fetchPosts() {
+            if (this.selectedCourseIndex === "" || !this.courses[this.selectedCourseIndex]) {
+              this.statusBarText = "⚠️ Please select a subject first.";
+              return;
+            }
 
-        return comments
-          .map((c) => renderSingleCommentCard(c, currentUserId, false))
-          .join("");
-      }
+            const course = this.courses[this.selectedCourseIndex];
+            this.currentClassId = course.classId;
+            if (!this.selectedSessionId) {
+              this.statusBarText = "⚠️ Please select a session.";
+              return;
+            }
 
-      function renderSingleCommentCard(c, currentUserId, isNested = false) {
-        const isMe = currentUserId && c.authorId === currentUserId;
-        const isInstructor = (c.authorRole || "")
-          .toLowerCase()
-          .includes("instructor");
-        const authorName = c.authorfullName || c.authorFullName || "Mahasiswa";
-        const roleName = c.authorRole || "Member";
-        const postDate = formatDisplayDate(c.postDate);
-        const initials = getInitials(authorName);
+            if (this.fetchAbortController) {
+              this.fetchAbortController.abort();
+            }
+            this.fetchAbortController = new AbortController();
 
-        let meBadge = isMe
-          ? `<span class="badge badge-replied" style="font-size:0.7rem; padding:2px 7px;">⭐ Jawaban Anda</span>`
-          : "";
-        let roleBadge = isInstructor
-          ? `<span class="badge badge-lecturer" style="font-size:0.7rem; padding:2px 7px;">👨‍🏫 ${escapeHtml(roleName)}</span>`
-          : "";
-        let avatarClass = isMe ? "is-me" : isInstructor ? "is-instructor" : "";
+            this.isLoadingPosts = true;
+            this.statusBarText = `⏳ Fetching posts for ${course.courseName} (${this.selectedSessionText})...`;
 
-        let repliesHtml = "";
-        if (c.replies && Array.isArray(c.replies) && c.replies.length > 0) {
-          repliesHtml = `
-          <div class="replies-nested-list">
-            ${c.replies.map((r) => renderSingleCommentCard(r, currentUserId, true)).join("")}
-          </div>
-        `;
-        }
+            try {
+              const url = `/api/posts?class_id=${encodeURIComponent(this.currentClassId)}&session_id=${encodeURIComponent(this.selectedSessionId)}`;
+              const res = await fetch(url, { signal: this.fetchAbortController.signal });
+              const data = await res.json();
 
-        return `
-        <div class="comment-card ${isMe ? "is-me" : ""}">
-          <div class="comment-meta">
-            <div class="comment-author-left">
-              <div class="avatar-circle ${avatarClass}">
-                ${c.authorPictureUrl ? `<img src="${c.authorPictureUrl}" style="width:3rem;height:3rem;object-fit:cover;" alt="${initials}">` : initials}
-              </div>
-              <div>
-                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-                  <span class="author-name-text">${escapeHtml(authorName)}</span>
-                  ${meBadge}
-                  ${roleBadge}
+              if (data.error) {
+                this.statusBarText = `❌ ${data.error}`;
+                this.threads = [];
+                return;
+              }
+
+              this.threads = data.threads || [];
+              this.statusBarText = `✅ Loaded ${this.threads.length} lecturer posts for ${course.courseName}.`;
+            } catch (err) {
+              if (err.name === "AbortError") return;
+              this.statusBarText = `❌ Network error fetching posts: ${err.message}`;
+            } finally {
+              this.isLoadingPosts = false;
+            }
+          },
+
+          async submitAnswer(threadId) {
+            const reply = this.getReplyState(threadId);
+            const answerText = reply.text.trim();
+
+            if (!answerText) {
+              reply.feedbackClass = "submit-feedback error";
+              reply.feedbackText = "⚠️ Answer cannot be empty.";
+              return;
+            }
+
+            reply.isSubmitting = true;
+            reply.feedbackClass = "submit-feedback";
+            reply.feedbackText = "Submitting answer...";
+
+            const threadObj = this.threads.find((x) => x.threadId === threadId);
+
+            try {
+              const res = await fetch("/api/answer", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  thread_id: threadId,
+                  answer_text: answerText,
+                  class_id: this.currentClassId,
+                  session_id: threadObj ? threadObj.sessionId : null,
+                }),
+              });
+
+              const data = await res.json();
+              if (data.success) {
+                reply.feedbackClass = "submit-feedback success";
+                reply.feedbackText = "🎉 Answer posted successfully!";
+                reply.text = "";
+
+                if (threadObj) {
+                  threadObj.hasReplied = true;
+                  threadObj.replyText = answerText;
+                  threadObj.replyDate = new Date().toISOString();
+                }
+              } else {
+                reply.feedbackClass = "submit-feedback error";
+                reply.feedbackText = `❌ Failed: ${data.error}`;
+              }
+            } catch (err) {
+              reply.feedbackClass = "submit-feedback error";
+              reply.feedbackText = `❌ Error: ${err.message}`;
+            } finally {
+              reply.isSubmitting = false;
+            }
+          },
+
+          async triggerRelogin() {
+            this.isRelogging = true;
+            this.statusBarText = "🌐 Chrome opened. Please log in to Binus LMS in the browser window...";
+            try {
+              const res = await fetch("/api/relogin", { method: "POST" });
+              const data = await res.json();
+              if (data.success) {
+                this.statusBarText = `🎉 Login successful for ${data.name}!`;
+                await this.loadInitData();
+              } else {
+                this.statusBarText = `❌ Login failed: ${data.error}`;
+              }
+            } catch (err) {
+              this.statusBarText = `❌ Error: ${err.message}`;
+            } finally {
+              this.isRelogging = false;
+            }
+          },
+
+          // Modal functions
+          openCommentsModal(threadId) {
+            this.activeModalThreadId = threadId;
+            this.modalThread = this.threads.find((x) => x.threadId === threadId) || null;
+            this.modalCurrentPage = 1;
+            this.modalCommentsList = [];
+            this.modalTotalComments = 0;
+            this.modalReplyText = "";
+            this.modalFeedbackText = "";
+            this.modalFeedbackClass = "";
+            this.modalErrorMessage = "";
+            this.isModalOpen = true;
+
+            this.fetchModalComments(1, false);
+          },
+
+          closeCommentsModal() {
+            this.isModalOpen = false;
+            this.activeModalThreadId = null;
+            this.modalThread = null;
+          },
+
+          async fetchModalComments(page = 1, append = false) {
+            if (!this.activeModalThreadId || !this.currentClassId) return;
+            if (this.modalIsLoading) return;
+
+            this.modalIsLoading = true;
+            this.modalErrorMessage = "";
+
+            try {
+              const url = `/api/comments?class_id=${encodeURIComponent(this.currentClassId)}&thread_id=${encodeURIComponent(this.activeModalThreadId)}&page=${page}&limit=25`;
+              const res = await fetch(url);
+              const data = await res.json();
+
+              if (data.error) {
+                this.modalErrorMessage = `Gagal memuat jawaban: ${data.error}`;
+                return;
+              }
+
+              if (data.currentUserId) {
+                this.currentUserId = data.currentUserId;
+              }
+
+              this.modalTotalComments = data.total || 0;
+              const newComments = data.comments || [];
+
+              if (append) {
+                this.modalCommentsList = this.modalCommentsList.concat(newComments);
+              } else {
+                this.modalCommentsList = newComments;
+              }
+            } catch (err) {
+              this.modalErrorMessage = `Network error: ${err.message}`;
+            } finally {
+              this.modalIsLoading = false;
+            }
+          },
+
+          loadMoreModalComments() {
+            if (this.modalIsLoading) return;
+            this.modalCurrentPage += 1;
+            this.fetchModalComments(this.modalCurrentPage, true);
+          },
+
+          async submitModalAnswer() {
+            const answerText = this.modalReplyText.trim();
+            if (!answerText) {
+              this.modalFeedbackClass = "submit-feedback error";
+              this.modalFeedbackText = "⚠️ Jawaban tidak boleh kosong.";
+              return;
+            }
+
+            this.modalSubmitting = true;
+            this.modalFeedbackClass = "submit-feedback";
+            this.modalFeedbackText = "Mengirim jawaban...";
+
+            const threadObj = this.threads.find((x) => x.threadId === this.activeModalThreadId);
+
+            try {
+              const res = await fetch("/api/answer", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  thread_id: this.activeModalThreadId,
+                  answer_text: answerText,
+                  class_id: this.currentClassId,
+                  session_id: threadObj ? threadObj.sessionId : null,
+                }),
+              });
+
+              const data = await res.json();
+              if (data.success) {
+                this.modalFeedbackClass = "submit-feedback success";
+                this.modalFeedbackText = "🎉 Jawaban berhasil dikirim!";
+                this.modalReplyText = "";
+
+                if (threadObj) {
+                  threadObj.hasReplied = true;
+                  threadObj.replyText = answerText;
+                  threadObj.replyDate = new Date().toISOString();
+                }
+
+                setTimeout(() => {
+                  this.fetchModalComments(1, false);
+                }, 600);
+              } else {
+                this.modalFeedbackClass = "submit-feedback error";
+                this.modalFeedbackText = `❌ Gagal: ${data.error}`;
+              }
+            } catch (err) {
+              this.modalFeedbackClass = "submit-feedback error";
+              this.modalFeedbackText = `❌ Error: ${err.message}`;
+            } finally {
+              this.modalSubmitting = false;
+            }
+          },
+
+          // Utility methods
+          renderSingleCommentCard(c, currentUserId, isNested = false) {
+            const isMe = currentUserId && c.authorId === currentUserId;
+            const isInstructor = (c.authorRole || "")
+              .toLowerCase()
+              .includes("instructor");
+            const authorName = c.authorfullName || c.authorFullName || "Mahasiswa";
+            const roleName = c.authorRole || "Member";
+            const postDate = this.formatDisplayDate(c.postDate);
+            const initials = this.getInitials(authorName);
+
+            const meBadge = isMe
+              ? `<span class="badge badge-replied" style="font-size:0.7rem; padding:2px 7px;">⭐ Jawaban Anda</span>`
+              : "";
+            const roleBadge = isInstructor
+              ? `<span class="badge badge-lecturer" style="font-size:0.7rem; padding:2px 7px;">👨‍🏫 ${this.escapeHtml(roleName)}</span>`
+              : "";
+            const avatarClass = isMe ? "is-me" : isInstructor ? "is-instructor" : "";
+
+            let repliesHtml = "";
+            if (c.replies && Array.isArray(c.replies) && c.replies.length > 0) {
+              repliesHtml = `
+                <div class="replies-nested-list">
+                  ${c.replies.map((r) => this.renderSingleCommentCard(r, currentUserId, true)).join("")}
                 </div>
-                <div class="comment-date">${postDate}</div>
-              </div>
-            </div>
-          </div>
-          <div class="comment-text-body">
-            ${renderCommentBody(c.commentText)}
-          </div>
-          ${repliesHtml}
-        </div>
-      `;
-      }
-
-      function renderCommentBody(rawHtml) {
-        if (!rawHtml) return "<p><em>(Tidak ada teks jawaban)</em></p>";
-        let safe = rawHtml.replace(
-          /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
-          "",
-        );
-        safe = safe.replace(
-          /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
-          "",
-        );
-        safe = safe.replace(/on\w+\s*=\s*["'][^"']*["']/gi, "");
-        return safe;
-      }
-
-      function getInitials(name) {
-        if (!name) return "?";
-        const parts = name.trim().split(/\s+/);
-        if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-      }
-
-      async function submitModalAnswer() {
-        const textarea = document.getElementById("modalReplyText");
-        const feedback = document.getElementById("modalFeedback");
-        const submitBtn = document.getElementById("modalSubmitBtn");
-        const answerText = textarea.value.trim();
-
-        if (!answerText) {
-          feedback.className = "submit-feedback error";
-          feedback.textContent = "⚠️ Jawaban tidak boleh kosong.";
-          return;
-        }
-
-        submitBtn.disabled = true;
-        feedback.className = "submit-feedback";
-        feedback.textContent = "Mengirim jawaban...";
-
-        const threadObj = currentThreads.find(
-          (x) => x.threadId === activeModalThreadId,
-        );
-
-        try {
-          const res = await fetch("/api/answer", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              thread_id: activeModalThreadId,
-              answer_text: answerText,
-              class_id: currentClassId,
-              session_id: threadObj ? threadObj.sessionId : null,
-            }),
-          });
-
-          const data = await res.json();
-          if (data.success) {
-            feedback.className = "submit-feedback success";
-            feedback.textContent = "🎉 Jawaban berhasil dikirim!";
-            textarea.value = "";
-
-            if (threadObj) {
-              threadObj.hasReplied = true;
-              threadObj.replyText = answerText;
-              threadObj.replyDate = new Date().toISOString();
+              `;
             }
-            renderThreads();
 
-            // Refresh comments in modal
-            setTimeout(() => {
-              fetchModalComments(1, false);
-            }, 600);
-          } else {
-            feedback.className = "submit-feedback error";
-            feedback.textContent = `❌ Gagal: ${data.error}`;
-          }
-        } catch (err) {
-          feedback.className = "submit-feedback error";
-          feedback.textContent = `❌ Error: ${err.message}`;
-        } finally {
-          submitBtn.disabled = false;
-        }
-      }
+            return `
+              <div class="comment-card ${isMe ? "is-me" : ""}">
+                <div class="comment-meta">
+                  <div class="comment-author-left">
+                    <div class="avatar-circle ${avatarClass}">
+                      ${c.authorPictureUrl ? `<img src="${c.authorPictureUrl}" style="width:3rem;height:3rem;object-fit:cover;" alt="${initials}">` : initials}
+                    </div>
+                    <div>
+                      <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                        <span class="author-name-text">${this.escapeHtml(authorName)}</span>
+                        ${meBadge}
+                        ${roleBadge}
+                      </div>
+                      <div class="comment-date">${postDate}</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="comment-text-body">
+                  ${this.renderCommentBody(c.commentText)}
+                </div>
+                ${repliesHtml}
+              </div>
+            `;
+          },
+
+          renderCommentBody(rawHtml) {
+            if (!rawHtml) return "<p><em>(Tidak ada teks jawaban)</em></p>";
+            let safe = rawHtml.replace(
+              /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+              "",
+            );
+            safe = safe.replace(
+              /<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi,
+              "",
+            );
+            safe = safe.replace(/on\w+\s*=\s*["'][^"']*["']/gi, "");
+            return safe;
+          },
+
+          formatDisplayDate(dateStr) {
+            if (!dateStr) return "-";
+            try {
+              const clean = dateStr.replace("Z", "");
+              const d = new Date(clean);
+              if (isNaN(d.getTime())) return dateStr;
+              return d.toLocaleDateString("id-ID", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+            } catch (e) {
+              return dateStr;
+            }
+          },
+
+          getInitials(name) {
+            if (!name) return "?";
+            const parts = name.trim().split(/\s+/);
+            if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+          },
+
+          // Schedule Getters
+          get scheduleCounts() {
+            const now = new Date();
+            let open = 0, upcoming = 0, completed = 0, overdue = 0;
+            this.scheduleAssessments.forEach((item) => {
+              const st = this.getCardAvailability(item, now);
+              if (st.key === "completed") completed++;
+              else if (st.key === "upcoming") upcoming++;
+              else if (st.key === "overdue") overdue++;
+              else open++;
+            });
+            return {
+              total: this.scheduleAssessments.length,
+              open,
+              upcoming,
+              completed,
+              overdue,
+            };
+          },
+
+          get scheduleCountByComp() {
+            let lec = 0, lab = 0;
+            this.scheduleAssessments.forEach((item) => {
+              if (item.component === "LEC") lec++;
+              else if (item.component === "LAB") lab++;
+            });
+            return { LEC: lec, LAB: lab };
+          },
+
+          get availableScheduleTypes() {
+            const groups = {
+              personal_assignment: { key: "personal_assignment", label: "Personal Assignment", count: 0 },
+              team_assignment: { key: "team_assignment", label: "Team Assignment", count: 0 },
+              quiz: { key: "quiz", label: "Quiz", count: 0 },
+              project_team: { key: "project_team", label: "Project Team", count: 0 },
+              forum_discussion: { key: "forum_discussion", label: "Forum Discussion", count: 0 },
+              attendance: { key: "attendance", label: "Attendance / Presensi", count: 0 },
+              other: { key: "other", label: "Lainnya", count: 0 },
+            };
+
+            this.scheduleAssessments.forEach((item) => {
+              const grp = this.getGroupedType(item);
+              if (groups[grp.key]) {
+                groups[grp.key].count++;
+              } else {
+                groups.other.count++;
+              }
+            });
+
+            return Object.values(groups).filter((g) => g.count > 0);
+          },
+
+          get visibleScheduleSubjects() {
+            const list = [];
+            this.scheduleSubjects.forEach((sub) => {
+              if (this.scheduleCategories.includes(sub.component)) {
+                const key = `${sub.classId}_${sub.component}`;
+                const count = this.scheduleAssessments.filter(
+                  (a) => a.classId === sub.classId && a.component === sub.component
+                ).length;
+                list.push({
+                  key,
+                  classId: sub.classId,
+                  component: sub.component,
+                  courseCode: sub.courseCode,
+                  courseName: sub.courseName,
+                  count,
+                });
+              }
+            });
+            return list;
+          },
+
+          get isScheduleFiltered() {
+            const allTypesCount = this.availableScheduleTypes.length;
+            return (
+              this.scheduleCategories.length < 2 ||
+              this.scheduleAvailabilityFilter !== "open" ||
+              (this.scheduleSearchQuery && this.scheduleSearchQuery.trim() !== "") ||
+              this.scheduleSelectedSubjects.length < this.scheduleSubjects.length ||
+              this.scheduleSelectedTypes.length < allTypesCount
+            );
+          },
+
+          get filteredAssessments() {
+            const now = new Date();
+            const query = (this.scheduleSearchQuery || "").trim().toLowerCase();
+
+            return this.scheduleAssessments.filter((item) => {
+              // 1. Component filter (LEC/LAB)
+              if (!this.scheduleCategories.includes(item.component)) return false;
+
+              // 2. Subject filter
+              const subjKey = `${item.classId}_${item.component}`;
+              if (
+                this.scheduleSelectedSubjects.length > 0 &&
+                !this.scheduleSelectedSubjects.includes(subjKey)
+              ) {
+                return false;
+              }
+
+              // 3. Assessment grouped type filter
+              const grp = this.getGroupedType(item);
+              if (!this.scheduleSelectedTypes.includes(grp.key)) return false;
+
+              // 4. Availability / status filter
+              const avail = this.getCardAvailability(item, now);
+              if (
+                this.scheduleAvailabilityFilter === "open" &&
+                avail.key !== "open" &&
+                avail.key !== "urgent"
+              )
+                return false;
+              if (this.scheduleAvailabilityFilter === "upcoming" && avail.key !== "upcoming")
+                return false;
+              if (this.scheduleAvailabilityFilter === "completed" && avail.key !== "completed")
+                return false;
+              if (this.scheduleAvailabilityFilter === "overdue" && avail.key !== "overdue")
+                return false;
+
+              // 5. Search query
+              if (query) {
+                const targetText = `${item.title} ${item.courseName} ${item.courseCode} ${item.activityName}`.toLowerCase();
+                if (!targetText.includes(query)) return false;
+              }
+
+              return true;
+            });
+          },
+
+          // Schedule Methods
+          getCardAvailability(item, now = new Date()) {
+            const isCompleted =
+              item.status === "Completed" || (item.totalAttempted && item.totalAttempted > 0);
+            if (isCompleted) {
+              return {
+                key: "completed",
+                label:
+                  item.isScored && item.scorePts !== null && item.scorePts !== undefined
+                    ? `Selesai (${item.scorePts} pts)`
+                    : "Sudah Selesai",
+                badgeClass: "badge-avail-completed",
+                icon: "✅",
+              };
+            }
+
+            const start = item.dateStart ? new Date(item.dateStart) : null;
+            const due = item.dueDate ? new Date(item.dueDate) : null;
+
+            if (start && now < start) {
+              return {
+                key: "upcoming",
+                label: "Belum Dibuka",
+                badgeClass: "badge-avail-upcoming",
+                icon: "⏳",
+              };
+            }
+
+            if (due && now > due) {
+              return {
+                key: "overdue",
+                label: "Tenggat Terlewat",
+                badgeClass: "badge-avail-overdue",
+                icon: "⚠️",
+              };
+            }
+
+            if (due) {
+              const diffHours = (due - now) / (1000 * 60 * 60);
+              if (diffHours <= 72) {
+                return {
+                  key: "urgent",
+                  label: "Segera Berakhir",
+                  badgeClass: "badge-avail-urgent",
+                  icon: "⚡",
+                };
+              }
+            }
+
+            return {
+              key: "open",
+              label: "Bisa Dikerjakan",
+              badgeClass: "badge-avail-open",
+              icon: "🟢",
+            };
+          },
+
+          formatScheduleDate(isoStr) {
+            if (!isoStr || isoStr.startsWith("0001")) return "-";
+            try {
+              const d = new Date(isoStr);
+              if (isNaN(d.getTime())) return isoStr;
+              const months = [
+                "Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+                "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
+              ];
+              const day = d.getDate();
+              const month = months[d.getMonth()];
+              const year = d.getFullYear();
+              const hh = String(d.getHours()).padStart(2, "0");
+              const mm = String(d.getMinutes()).padStart(2, "0");
+              return `${day} ${month} ${year}, ${hh}:${mm}`;
+            } catch (e) {
+              return isoStr;
+            }
+          },
+
+          formatRelativeDate(item) {
+            const now = new Date();
+            const isCompleted =
+              item.status === "Completed" || (item.totalAttempted && item.totalAttempted > 0);
+            if (isCompleted) {
+              if (item.submissionDate) {
+                return `Diserahkan pada ${this.formatScheduleDate(item.submissionDate)}`;
+              }
+              return "Tugas telah diselesaikan";
+            }
+
+            const start = item.dateStart ? new Date(item.dateStart) : null;
+            const due = item.dueDate ? new Date(item.dueDate) : null;
+
+            if (start && now < start) {
+              const diffMs = start - now;
+              const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+              return diffDays <= 1 ? "Dibuka besok" : `Dibuka dalam ${diffDays} hari`;
+            }
+
+            if (due) {
+              const diffMs = due - now;
+              if (diffMs < 0) {
+                const pastDays = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60 * 24));
+                return pastDays <= 0
+                  ? "Tenggat terlewat beberapa jam lalu"
+                  : `Tenggat terlewat ${pastDays} hari lalu`;
+              }
+              const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+              const diffDays = Math.floor(diffHours / 24);
+              if (diffDays > 0) {
+                const remHours = diffHours % 24;
+                return remHours > 0
+                  ? `Sisa ${diffDays} hari ${remHours} jam`
+                  : `Sisa ${diffDays} hari`;
+              }
+              return `Sisa ${diffHours} jam lagi`;
+            }
+
+            return "";
+          },
+
+          getGroupedType(item) {
+            const lam = (item.lamType || "").toUpperCase();
+            const act = (item.activityName || "").toLowerCase();
+            const title = (item.title || "").toLowerCase();
+
+            if (
+              lam === "PAS" ||
+              act.includes("personal assignment") ||
+              title.includes("personal assignment")
+            ) {
+              return { key: "personal_assignment", label: "Personal Assignment" };
+            }
+            if (
+              lam === "TAS" ||
+              lam === "LTS" ||
+              act.includes("team assignment") ||
+              title.includes("team assignment")
+            ) {
+              return { key: "team_assignment", label: "Team Assignment" };
+            }
+            if (
+              lam === "QIZ" ||
+              lam === "QZ" ||
+              act.includes("quiz") ||
+              title.includes("quiz")
+            ) {
+              return { key: "quiz", label: "Quiz" };
+            }
+            if (lam === "LPRT" || act.includes("project") || title.includes("project")) {
+              return { key: "project_team", label: "Project Team" };
+            }
+            if (lam === "FOD" || act.includes("forum") || title.includes("forum")) {
+              return { key: "forum_discussion", label: "Forum Discussion" };
+            }
+            if (lam === "ATT" || act.includes("attendance") || act.includes("presensi")) {
+              return { key: "attendance", label: "Attendance / Presensi" };
+            }
+            return { key: "other", label: "Lainnya" };
+          },
+
+          getTypeLabel(item) {
+            return this.getGroupedType(item).label;
+          },
+
+          async loadScheduleAssessments(forceRefresh = false) {
+            if (!this.schedulePeriod) {
+              this.schedulePeriod =
+                this.selectedPeriod || (this.periods[0] ? this.periods[0].code : "2611");
+            }
+            this.scheduleLoading = true;
+            this.scheduleError = null;
+            try {
+              const url = `/api/schedule/assessments?period=${this.schedulePeriod}${
+                forceRefresh ? "&force_refresh=true" : ""
+              }`;
+              const res = await fetch(url);
+              const data = await res.json();
+              if (data.error) {
+                this.scheduleError = data.error;
+                return;
+              }
+              this.scheduleAssessments = data.assessments || [];
+              this.scheduleSubjects = data.subjects || [];
+
+              // Initialize selected subjects (all checked by default)
+              this.scheduleSelectedSubjects = this.scheduleSubjects.map(
+                (s) => `${s.classId}_${s.component}`
+              );
+              this.scheduleLoaded = true;
+            } catch (err) {
+              this.scheduleError = `Gagal memuat jadwal: ${err.message}`;
+            } finally {
+              this.scheduleLoading = false;
+            }
+          },
+
+          toggleScheduleCategory(cat) {
+            if (this.scheduleCategories.includes(cat)) {
+              if (this.scheduleCategories.length > 1) {
+                this.scheduleCategories = this.scheduleCategories.filter((c) => c !== cat);
+              }
+            } else {
+              this.scheduleCategories.push(cat);
+            }
+          },
+
+          toggleScheduleType(typeKey) {
+            if (this.scheduleSelectedTypes.includes(typeKey)) {
+              if (this.scheduleSelectedTypes.length > 1) {
+                this.scheduleSelectedTypes = this.scheduleSelectedTypes.filter((t) => t !== typeKey);
+              }
+            } else {
+              this.scheduleSelectedTypes.push(typeKey);
+            }
+          },
+
+          toggleScheduleSubject(subKey) {
+            if (this.scheduleSelectedSubjects.includes(subKey)) {
+              if (this.scheduleSelectedSubjects.length > 1) {
+                this.scheduleSelectedSubjects = this.scheduleSelectedSubjects.filter(
+                  (k) => k !== subKey
+                );
+              }
+            } else {
+              this.scheduleSelectedSubjects.push(subKey);
+            }
+          },
+
+          selectAllScheduleTypes() {
+            this.scheduleSelectedTypes = [
+              "personal_assignment", "team_assignment", "quiz", "project_team", "forum_discussion", "attendance", "other"
+            ];
+          },
+
+          clearAllScheduleTypes() {
+            this.scheduleSelectedTypes = [];
+          },
+
+          selectAllScheduleSubjects() {
+            this.scheduleSelectedSubjects = this.scheduleSubjects.map(
+              (s) => `${s.classId}_${s.component}`
+            );
+          },
+
+          clearAllScheduleSubjects() {
+            this.scheduleSelectedSubjects = [];
+          },
+
+          resetScheduleFilters() {
+            this.scheduleCategories = ["LEC", "LAB"];
+            this.scheduleAvailabilityFilter = "open";
+            this.scheduleSearchQuery = "";
+            this.selectAllScheduleTypes();
+            this.selectAllScheduleSubjects();
+          },
+
+          openAssessmentInLms(item) {
+            if (item.deepLink) {
+              window.open(item.deepLink, "_blank");
+            }
+          },
+
+          escapeHtml(str) {
+            if (!str) return "";
+            return str
+              .replace(/&/g, "&amp;")
+              .replace(/</g, "&lt;")
+              .replace(/>/g, "&gt;")
+              .replace(/"/g, "&quot;")
+              .replace(/'/g, "&#039;");
+          },
+        }));
+      });
     </script>
   </body>
 </html>

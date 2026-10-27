@@ -1,0 +1,333 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Jadwal & Asesmen - BINUS LMS Assistant{% endblock %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="/static/css/schedule.css" />
+{% endblock %}
+
+{% block app_data %}scheduleApp{% endblock %}
+
+{% block content %}
+  <!-- Filter Card -->
+  <div class="schedule-filter-card">
+    <!-- Control Row 1: Period, Refresh, Search, Quick Stats -->
+    <div class="schedule-control-row" style="justify-content: space-between;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted); white-space: nowrap;">Periode:</label>
+          <select
+            class="select-input"
+            style="min-width: 240px; padding: 7px 12px; font-size: 0.85rem;"
+            x-model="schedulePeriod"
+            @change="loadScheduleAssessments()"
+            :disabled="scheduleLoading"
+          >
+            <template x-for="p in periods" :key="p.code">
+              <option :value="p.code" x-text="p.description" :selected="p.code === schedulePeriod"></option>
+            </template>
+          </select>
+        </div>
+
+        <button
+          type="button"
+          class="btn btn-secondary"
+          style="padding: 7px 14px; font-size: 0.85rem;"
+          @click="loadScheduleAssessments(true)"
+          :disabled="scheduleLoading"
+          title="Refresh Asesmen dari LMS"
+        >
+          <span :class="{ 'spin': scheduleLoading }">🔄</span>
+          <span>Refresh</span>
+        </button>
+      </div>
+
+      <!-- Search box -->
+      <div style="flex: 1; max-width: 320px; min-width: 200px;">
+        <input
+          type="text"
+          class="select-input"
+          style="width: 100%; padding: 7px 12px; font-size: 0.85rem;"
+          placeholder="🔍 Cari tugas / matakuliah..."
+          x-model="scheduleSearchQuery"
+        />
+      </div>
+    </div>
+
+    <div class="schedule-divider"></div>
+
+    <!-- Control Row 2: Category (LEC/LAB) & Availability Quick Tabs -->
+    <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;">
+      <!-- Component Filters -->
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px;">Kategori:</span>
+        <button
+          type="button"
+          class="filter-pill pill-lec"
+          :class="{ 'active': scheduleCategories.includes('LEC') }"
+          @click="toggleScheduleCategory('LEC')"
+        >
+          <span>📘 Teori (LEC)</span>
+          <span class="pill-counter" x-text="scheduleCountByComp.LEC"></span>
+        </button>
+        <button
+          type="button"
+          class="filter-pill pill-lab"
+          :class="{ 'active': scheduleCategories.includes('LAB') }"
+          @click="toggleScheduleCategory('LAB')"
+        >
+          <span>💻 Praktikum (LAB)</span>
+          <span class="pill-counter" x-text="scheduleCountByComp.LAB"></span>
+        </button>
+      </div>
+
+      <!-- Availability Tabs -->
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+        <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-right: 4px;">Status:</span>
+        <button
+          type="button"
+          class="filter-pill"
+          :class="{ 'active': scheduleAvailabilityFilter === 'all' }"
+          @click="scheduleAvailabilityFilter = 'all'"
+        >
+          <span>Semua</span>
+          <span class="pill-counter" x-text="scheduleCounts.total"></span>
+        </button>
+        <button
+          type="button"
+          class="filter-pill"
+          :class="{ 'active': scheduleAvailabilityFilter === 'open' }"
+          @click="scheduleAvailabilityFilter = 'open'"
+          style="border-color: rgba(5, 150, 105, 0.4);"
+        >
+          <span>🟢 Bisa Dikerjakan</span>
+          <span class="pill-counter" x-text="scheduleCounts.open"></span>
+        </button>
+        <button
+          type="button"
+          class="filter-pill"
+          :class="{ 'active': scheduleAvailabilityFilter === 'upcoming' }"
+          @click="scheduleAvailabilityFilter = 'upcoming'"
+        >
+          <span>⏳ Belum Dibuka</span>
+          <span class="pill-counter" x-text="scheduleCounts.upcoming"></span>
+        </button>
+        <button
+          type="button"
+          class="filter-pill"
+          :class="{ 'active': scheduleAvailabilityFilter === 'completed' }"
+          @click="scheduleAvailabilityFilter = 'completed'"
+        >
+          <span>🔵 Sudah Selesai</span>
+          <span class="pill-counter" x-text="scheduleCounts.completed"></span>
+        </button>
+        <button
+          type="button"
+          class="filter-pill"
+          :class="{ 'active': scheduleAvailabilityFilter === 'overdue' }"
+          @click="scheduleAvailabilityFilter = 'overdue'"
+          style="border-color: rgba(220, 38, 38, 0.4);"
+        >
+          <span>🔴 Terlewat</span>
+          <span class="pill-counter" x-text="scheduleCounts.overdue"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="schedule-divider"></div>
+
+    <!-- Control Row 3: Assessment Type Filter -->
+    <div style="margin-bottom: 14px;">
+      <div class="filter-group-title">
+        <span>Filter Jenis Tugas</span>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="filter-text-btn" @click="selectAllScheduleTypes()">Pilih Semua</button>
+          <span style="color: var(--surface-border);">|</span>
+          <button type="button" class="filter-text-btn" @click="clearAllScheduleTypes()">Batal Semua</button>
+        </div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <template x-for="t in availableScheduleTypes" :key="t.key">
+          <button
+            type="button"
+            class="filter-pill"
+            :class="{ 'active': scheduleSelectedTypes.includes(t.key) }"
+            @click="toggleScheduleType(t.key)"
+          >
+            <span x-text="t.label"></span>
+            <span class="pill-counter" x-text="t.count"></span>
+          </button>
+        </template>
+      </div>
+    </div>
+
+    <!-- Control Row 4: Subject Filter -->
+    <div>
+      <div class="filter-group-title">
+        <span>Filter Mata Kuliah</span>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" class="filter-text-btn" @click="selectAllScheduleSubjects()">Pilih Semua</button>
+          <span style="color: var(--surface-border);">|</span>
+          <button type="button" class="filter-text-btn" @click="clearAllScheduleSubjects()">Batal Semua</button>
+        </div>
+      </div>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <template x-for="sub in visibleScheduleSubjects" :key="sub.key">
+          <button
+            type="button"
+            class="filter-pill"
+            :class="{ 'active': scheduleSelectedSubjects.includes(sub.key) }"
+            @click="toggleScheduleSubject(sub.key)"
+          >
+            <span
+              style="font-size: 0.72rem; padding: 1px 4px; border-radius: 4px; font-weight: 700; margin-right: 2px;"
+              :class="sub.component === 'LEC' ? 'badge-comp-lec' : 'badge-comp-lab'"
+              x-text="sub.component"
+            ></span>
+            <span x-text="sub.courseName"></span>
+            <span class="pill-counter" x-text="sub.count"></span>
+          </button>
+        </template>
+      </div>
+    </div>
+  </div>
+
+  <!-- Feedback & Status Info Bar -->
+  <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding: 0 4px;">
+    <div style="font-size: 0.9rem; font-weight: 600; color: var(--text);">
+      Menampilkan <span style="color: var(--primary);" x-text="filteredAssessments.length"></span> dari <span x-text="scheduleAssessments.length"></span> tugas
+      <span style="font-size: 0.8rem; font-weight: 400; color: var(--text-muted); margin-left: 6px;">(Diurutkan berdasarkan due date terdekat)</span>
+    </div>
+    <button
+      type="button"
+      class="filter-text-btn"
+      @click="resetScheduleFilters()"
+      x-show="isScheduleFiltered"
+    >
+      Reset Semua Filter
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div x-show="scheduleLoading" style="text-align: center; padding: 60px 20px;">
+    <div class="spin" style="display: inline-block; font-size: 2.2rem; margin-bottom: 12px;">🔄</div>
+    <div style="font-weight: 600; font-size: 1.05rem;">Memuat daftar asesmen & jadwal...</div>
+    <div style="color: var(--text-muted); font-size: 0.85rem; margin-top: 4px;">Mengambil data seluruh mata kuliah teori & praktikum</div>
+  </div>
+
+  <!-- Empty State -->
+  <div x-show="!scheduleLoading && filteredAssessments.length === 0" class="card" style="text-align: center; padding: 50px 20px; margin-top: 10px;">
+    <div style="font-size: 3rem; margin-bottom: 12px;">📋</div>
+    <h3 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 6px;">Tidak ada asesmen yang cocok</h3>
+    <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 440px; margin: 0 auto 16px auto;">
+      Tidak ditemukan tugas atau asesmen untuk kombinasi filter kategori, jenis tugas, atau ketersediaan yang dipilih.
+    </p>
+    <button type="button" class="btn btn-secondary" @click="resetScheduleFilters()">
+      Reset Filter
+    </button>
+  </div>
+
+  <!-- Cards Grid (1 Column) -->
+  <div class="schedule-cards-grid" x-show="!scheduleLoading && filteredAssessments.length > 0">
+    <template x-for="item in filteredAssessments" :key="item.id">
+      <div class="assessment-card" @click="openAssessmentInLms(item)">
+        <!-- Card Main (Left on desktop) -->
+        <div class="assessment-card-main">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <!-- Component Badge -->
+              <span
+                class="badge"
+                :class="item.component === 'LEC' ? 'badge-comp-lec' : 'badge-comp-lab'"
+                x-text="item.component === 'LEC' ? 'THEORY' : 'PRACTICUM'"
+              ></span>
+
+              <!-- Grouped Type Tag -->
+              <span class="badge badge-type-tag" x-text="getTypeLabel(item)"></span>
+            </div>
+
+            <!-- Availability / Status Badge -->
+            <span
+              class="badge"
+              :class="getCardAvailability(item).badgeClass"
+            >
+              <span x-text="getCardAvailability(item).icon"></span>
+              <span x-text="getCardAvailability(item).label"></span>
+            </span>
+          </div>
+
+          <!-- Course Name & Code -->
+          <div style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <span x-text="item.courseCode"></span>
+            <span>•</span>
+            <span x-text="item.classCode"></span>
+            <span>—</span>
+            <span x-text="item.courseName"></span>
+          </div>
+
+          <!-- Assessment Title -->
+          <div style="font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 8px; line-height: 1.3;" x-text="item.title"></div>
+
+          <!-- Meta Pills: Session & Weight -->
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span
+              x-show="item.sessionNumber"
+              style="font-size: 0.75rem; background: var(--bg); border: 1px solid var(--surface-border); padding: 2px 8px; border-radius: 6px; font-weight: 600; color: var(--text-muted);"
+              x-text="'Sesi ' + item.sessionNumber"
+            ></span>
+            <span
+              x-show="item.lamWeight"
+              style="font-size: 0.75rem; background: var(--bg); border: 1px solid var(--surface-border); padding: 2px 8px; border-radius: 6px; font-weight: 600; color: var(--text-muted);"
+              x-text="'Bobot: ' + item.lamWeight"
+            ></span>
+            <span
+              x-show="item.isScored && item.scorePts !== null && item.scorePts !== undefined"
+              style="font-size: 0.75rem; background: var(--success-bg); color: var(--success); border: 1px solid rgba(22, 163, 74, 0.3); padding: 2px 8px; border-radius: 6px; font-weight: 700;"
+              x-text="'Nilai: ' + item.scorePts"
+            ></span>
+          </div>
+        </div>
+
+        <!-- Card Dates & Link (Right on desktop) -->
+        <div class="assessment-card-dates">
+          <div class="date-info-box" style="margin-top: 0; min-width: 260px;">
+            <!-- Start Date -->
+            <div class="date-row">
+              <span style="color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
+                <span>📅</span> Mulai:
+              </span>
+              <span style="font-weight: 600; color: var(--text);" x-text="formatScheduleDate(item.dateStart)"></span>
+            </div>
+            <!-- End Date / Due Date -->
+            <div class="date-row">
+              <span style="color: var(--text-muted); display: flex; align-items: center; gap: 5px;">
+                <span>⏰</span> Tenggat:
+              </span>
+              <span
+                style="font-weight: 700;"
+                :style="getCardAvailability(item).key === 'overdue' ? 'color: var(--danger);' : (getCardAvailability(item).key === 'urgent' ? 'color: var(--warning);' : 'color: var(--text);')"
+                x-text="formatScheduleDate(item.dueDate)"
+              ></span>
+            </div>
+            <!-- Relative countdown -->
+            <div
+              style="text-align: right; font-size: 0.75rem; font-weight: 600; margin-top: 2px;"
+              :style="getCardAvailability(item).key === 'overdue' ? 'color: var(--danger);' : (getCardAvailability(item).key === 'urgent' ? 'color: var(--warning);' : 'color: var(--primary);')"
+              x-text="formatRelativeDate(item)"
+            ></div>
+          </div>
+
+          <!-- Footer link to LMS -->
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 0.8rem; font-weight: 600; color: var(--primary); margin-top: 2px;">
+            <span>Buka di LMS</span>
+            <span>↗</span>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+{% endblock %}
+
+{% block extra_js %}
+  <script src="/static/js/schedule.js"></script>
+{% endblock %}
