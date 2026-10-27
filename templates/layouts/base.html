@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}BINUS LMS Assistant{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+    <link rel="stylesheet" href="/static/css/base.css" />
+    {% block extra_css %}{% endblock %}
+  </head>
+  <body>
+    <div class="app-layout" x-data="{% block app_data %}null{% endblock %}" x-cloak>
+      {% include "components/sidebar.html" %}
+
+      <main class="main-content">
+        <div class="main-container">
+          {% include "components/header.html" %}
+
+          {% block content %}{% endblock %}
+        </div>
+      </main>
+
+      {% block modals %}{% endblock %}
+    </div>
+
+    <script src="/static/js/common.js"></script>
+    {% block extra_js %}{% endblock %}
+  </body>
+</html>

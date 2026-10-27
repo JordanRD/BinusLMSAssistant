@@ -3,8 +3,10 @@ import sys
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import uvicorn
 import lms_auth
@@ -16,9 +18,12 @@ if hasattr(sys.stderr, "reconfigure"):
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
-INDEX_FILE = STATIC_DIR / "index.html"
+TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
 app = FastAPI(title="BINUS LMS Forum Assistant")
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 # In-memory client cache
 _client: Optional[LmsApiClient] = None
@@ -40,11 +45,35 @@ class PostAnswerRequest(BaseModel):
     session_id: Optional[str] = None
 
 
-@app.get("/", response_class=HTMLResponse)
-async def serve_index():
-    if not INDEX_FILE.exists():
-        raise HTTPException(status_code=404, detail="Index HTML not found.")
-    return INDEX_FILE.read_text(encoding="utf-8")
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/forum")
+
+
+@app.get("/forum", response_class=HTMLResponse)
+async def serve_forum(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="forum.html",
+        context={
+            "active_page": "forum",
+            "page_title": "Forum Diskusi",
+            "page_subtitle": "Kelola dan jawab pertanyaan dosen BINUS LMS",
+        },
+    )
+
+
+@app.get("/schedule", response_class=HTMLResponse)
+async def serve_schedule(request: Request):
+    return templates.TemplateResponse(
+        request=request,
+        name="schedule.html",
+        context={
+            "active_page": "schedule",
+            "page_title": "Jadwal Kuliah & Asesmen",
+            "page_subtitle": "Jadwal perkuliahan dan sesi kelas",
+        },
+    )
 
 
 @app.get("/api/init")
@@ -118,6 +147,93 @@ async def api_subjects(period: str = Query(...)):
                     "lecturers": [l.get("name") for l in c.get("lecturers", [])],
                 })
         return {"courses": unique_courses}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.get("/api/schedule/assessments")
+async def api_schedule_assessments(
+    period: Optional[str] = Query(None),
+    force_refresh: bool = Query(False)
+):
+    try:
+        client = get_client()
+        active_period = period or client.get_active_period()
+        courses = client.get_courses_all_components(active_period, force_refresh=force_refresh)
+
+        def fetch_cards_for_course(c: Dict[str, Any]) -> List[Dict[str, Any]]:
+            cid = c.get("classId")
+            if not cid:
+                return []
+            groups = client.get_assessment_cards(cid, active_period, force_refresh=force_refresh)
+            cards = []
+            for g in groups:
+                activity_name = g.get("assessmentActivity", "")
+                lam_weight = g.get("lamWeight", "")
+                group_lam_type = g.get("lamType", "")
+                for it in g.get("data", []):
+                    title = it.get("assesmentTitle") or it.get("title") or activity_name
+                    csc_id = it.get("classSessionContentId")
+                    cs_id = it.get("classSessionId")
+                    if csc_id and cs_id:
+                        deep_link = f"https://lms.binus.ac.id/lms/course/assessment-student/classId/{cid}/resourceId/{csc_id}/sessionId/{cs_id}/online"
+                    else:
+                        deep_link = f"https://lms.binus.ac.id/lms/course/{cid}"
+
+                    cards.append({
+                        "id": f"{cid}_{it.get('assessmentId', '')}_{it.get('sessionNumber', '')}_{it.get('dateStart', '')}",
+                        "assessmentId": it.get("assessmentId"),
+                        "classId": cid,
+                        "courseCode": c.get("courseCode"),
+                        "courseName": c.get("courseName"),
+                        "classCode": c.get("classCode"),
+                        "component": c.get("component", "LEC"),
+                        "title": title,
+                        "activityName": activity_name,
+                        "lamType": it.get("lamType") or group_lam_type or "OTH",
+                        "lamWeight": lam_weight,
+                        "sessionNumber": it.get("sessionNumber"),
+                        "classSessionId": cs_id,
+                        "classSessionContentId": csc_id,
+                        "dateStart": it.get("dateStart"),
+                        "dueDate": it.get("dueDate"),
+                        "status": it.get("status"),
+                        "totalAttempted": it.get("totalAttempted", 0),
+                        "scorePts": it.get("scorePts"),
+                        "isScored": it.get("isScored", False),
+                        "isRestricted": it.get("isRestricted", False),
+                        "submissionDate": it.get("firstAttemptSubmittedDate"),
+                        "deepLink": deep_link,
+                    })
+            return cards
+
+        with ThreadPoolExecutor(max_workers=6) as executor:
+            card_batches = list(executor.map(fetch_cards_for_course, courses))
+
+        flattened = [card for batch in card_batches for card in batch]
+        # Sort by dueDate ascending, null dates at the end
+        flattened.sort(key=lambda x: x.get("dueDate") or "9999-12-31T23:59:59")
+
+        subjects = []
+        seen_subj = set()
+        for c in courses:
+            key = f"{c.get('classId')}_{c.get('component')}"
+            if key not in seen_subj:
+                seen_subj.add(key)
+                subjects.append({
+                    "classId": c.get("classId"),
+                    "courseCode": c.get("courseCode"),
+                    "courseName": c.get("courseName"),
+                    "classCode": c.get("classCode"),
+                    "component": c.get("component"),
+                })
+
+        return {
+            "period": active_period,
+            "subjects": subjects,
+            "assessments": flattened,
+            "total": len(flattened),
+        }
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 

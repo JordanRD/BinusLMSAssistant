@@ -1,0 +1,37 @@
+<!-- Header Component -->
+<header>
+  <div>
+    <h1 style="font-size: 1.35rem; font-weight: 700;">{{ page_title | default("BINUS LMS Assistant") }}</h1>
+    <p style="font-size: 0.85rem; color: var(--text-muted);">{{ page_subtitle | default("") }}</p>
+  </div>
+  <div style="display: flex; gap: 10px; align-items: center">
+    <div class="user-pill" id="userPill">
+      <template x-if="authError">
+        <span style="color:var(--danger)" x-text="authError"></span>
+      </template>
+      <template x-if="!authError && !user">
+        <span>Loading user profile...</span>
+      </template>
+      <template x-if="user">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <strong x-text="user.name"></strong>
+          <span>•</span>
+          <span x-text="`${user.role} (${user.academicCareer})`"></span>
+        </div>
+      </template>
+    </div>
+    <button
+      class="btn btn-secondary"
+      id="reloginBtn"
+      :disabled="isRelogging"
+      @click="triggerRelogin()"
+    >
+      <span
+        x-show="isRelogging"
+        class="spinner"
+        style="border-top-color: var(--primary); width:14px; height:14px; margin-right:4px;"
+      ></span>
+      <span x-text="isRelogging ? 'Opening Chrome...' : '🔑 Re-Login'"></span>
+    </button>
+  </div>
+</header>

@@ -1,0 +1,243 @@
+/* Schedule & Assessment Cards Styles */
+.schedule-filter-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow);
+}
+
+.schedule-control-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.schedule-divider {
+  height: 1px;
+  background: var(--surface-border);
+  margin: 16px 0;
+}
+
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border: 1px solid var(--surface-border);
+  background: var(--bg);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.filter-pill:hover {
+  border-color: var(--primary);
+  color: var(--text);
+}
+
+.filter-pill.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+.filter-pill.active .pill-counter {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.pill-counter {
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border-radius: 9999px;
+  background: var(--surface-border);
+  color: var(--text-muted);
+}
+
+.pill-lec.active {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+.pill-lab.active {
+  background: #9333ea;
+  border-color: #9333ea;
+}
+
+.filter-group-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filter-text-btn {
+  background: none;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  padding: 0 4px;
+}
+.filter-text-btn:hover {
+  text-decoration: underline;
+}
+
+.schedule-cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.assessment-card {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  position: relative;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+@media (min-width: 768px) {
+  .assessment-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+  .assessment-card-main {
+    flex: 1;
+    min-width: 0;
+  }
+  .assessment-card-dates {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+.assessment-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow);
+  border-color: rgba(37, 99, 235, 0.5);
+}
+
+.badge-comp-lec {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+.badge-comp-lab {
+  background: #faf5ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+}
+@media (prefers-color-scheme: dark) {
+  .badge-comp-lec {
+    background: #1e3a8a;
+    color: #93c5fd;
+    border-color: #1d4ed8;
+  }
+  .badge-comp-lab {
+    background: #581c87;
+    color: #d8b4fe;
+    border-color: #7e22ce;
+  }
+}
+
+.badge-type-tag {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--surface-border);
+}
+
+.badge-avail-open {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+.badge-avail-urgent {
+  background: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fde68a;
+}
+.badge-avail-upcoming {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+}
+.badge-avail-completed {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.badge-avail-overdue {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+@media (prefers-color-scheme: dark) {
+  .badge-avail-open {
+    background: #064e3b;
+    color: #6ee7b7;
+    border-color: #059669;
+  }
+  .badge-avail-urgent {
+    background: #78350f;
+    color: #fcd34d;
+    border-color: #d97706;
+  }
+  .badge-avail-upcoming {
+    background: #1e293b;
+    color: #94a3b8;
+    border-color: #334155;
+  }
+  .badge-avail-completed {
+    background: #14532d;
+    color: #86efac;
+    border-color: #16a34a;
+  }
+  .badge-avail-overdue {
+    background: #7f1d1d;
+    color: #fca5a5;
+    border-color: #b91c1c;
+  }
+}
+
+.date-info-box {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.date-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
