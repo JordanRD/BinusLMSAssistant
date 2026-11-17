@@ -4,7 +4,10 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from urllib.parse import urlparse
+import requests
+from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -129,14 +132,25 @@ async def api_init():
 
 
 @app.get("/api/subjects")
-async def api_subjects(period: str = Query(...)):
+async def api_subjects(
+    period: str = Query(...),
+    include_lab: bool = Query(False),
+):
     try:
         client = get_client()
-        raw_courses = client.get_courses(period)
+        raw_courses = (
+            client.get_courses_all_components(period)
+            if include_lab
+            else client.get_courses(period)
+        )
         unique_courses = []
         seen = set()
         for c in raw_courses:
-            code = c.get("courseCode") or c.get("classId")
+            code = (
+                f"{c.get('classId')}_{c.get('component', 'LEC')}"
+                if include_lab
+                else (c.get("courseCode") or c.get("classId"))
+            )
             if code not in seen:
                 seen.add(code)
                 unique_courses.append({
@@ -183,6 +197,16 @@ async def api_schedule_assessments(
                     cards.append({
                         "id": f"{cid}_{it.get('assessmentId', '')}_{it.get('sessionNumber', '')}_{it.get('dateStart', '')}",
                         "assessmentId": it.get("assessmentId"),
+                        "assessmentGroupId": (
+                            it.get("assessmentGroupId")
+                            or it.get("assesmentGroupId")
+                            or it.get("groupId")
+                            or it.get("assessmentGroupID")
+                            or it.get("assesmentGroupID")
+                            or g.get("assessmentGroupId")
+                            or g.get("assesmentGroupId")
+                            or g.get("groupId")
+                        ),
                         "classId": cid,
                         "courseCode": c.get("courseCode"),
                         "courseName": c.get("courseName"),
@@ -236,6 +260,171 @@ async def api_schedule_assessments(
         }
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+def _find_matching_group(
+    group_sets: List[Dict[str, Any]],
+    assessment_group_id: Optional[str],
+    user_id: str,
+) -> tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+    """Find the (group_set, group) matching assessment_group_id, or fallback to user's group."""
+    def contains_user(grp: Dict[str, Any]) -> bool:
+        return any(p.get("userId") == user_id for p in (grp.get("people") or []))
+
+    if assessment_group_id:
+        # 1. Exact match on individual group.id
+        for gs in group_sets:
+            for grp in gs.get("groupList") or []:
+                if grp.get("id") == assessment_group_id:
+                    return gs, grp
+
+        # 2. Match on groupSet.id (pick group containing user, or first group)
+        for gs in group_sets:
+            if gs.get("id") == assessment_group_id:
+                glist = gs.get("groupList") or []
+                for grp in glist:
+                    if contains_user(grp):
+                        return gs, grp
+                if glist:
+                    return gs, glist[0]
+
+    # 3. Fallback: find group containing the current user
+    if user_id:
+        for gs in group_sets:
+            for grp in gs.get("groupList") or []:
+                if contains_user(grp):
+                    return gs, grp
+
+    # 4. Last resort: first available group
+    for gs in group_sets:
+        glist = gs.get("groupList") or []
+        if glist:
+            return gs, glist[0]
+
+    return None, None
+
+
+@app.get("/api/schedule/team")
+async def api_schedule_team(
+    class_id: str = Query(...),
+    assessment_group_id: Optional[str] = Query(None),
+    force_refresh: bool = Query(False),
+):
+    try:
+        client = get_client()
+        group_sets = client.get_class_groups(class_id, force_refresh=force_refresh)
+        matched_set, matched_group = _find_matching_group(
+            group_sets, assessment_group_id, client.user_id
+        )
+
+        return {
+            "classId": class_id,
+            "assessmentGroupId": assessment_group_id,
+            "groupSetName": matched_set.get("groupSetName") if matched_set else None,
+            "group": {
+                "id": matched_group.get("id"),
+                "groupName": matched_group.get("groupName"),
+                "people": matched_group.get("people") or [],
+            } if matched_group else None,
+            "currentUserId": client.user_id,
+        }
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.get("/api/schedule/assessment-documents")
+async def api_schedule_assessment_documents(
+    class_id: str = Query(...),
+    resource_id: str = Query(...),
+    assessment_id: Optional[str] = Query(None),
+):
+    try:
+        client = get_client()
+        documents = client.get_assessment_documents(
+            class_id=class_id,
+            resource_id=resource_id,
+            assessment_id=assessment_id,
+        )
+        return {"documents": documents}
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@app.get("/api/schedule/download-document")
+async def api_schedule_download_document(
+    url: str = Query(...),
+    filename: Optional[str] = Query(None),
+):
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    if parsed.scheme != "https" or not (
+        host.endswith(".blob.core.windows.net") or host.endswith(".binus.ac.id")
+    ):
+        raise HTTPException(status_code=400, detail="Invalid document URL")
+
+    try:
+        resp = requests.get(url, stream=True, timeout=30)
+        resp.raise_for_status()
+
+        safe_name = (filename or Path(parsed.path).name or "document").replace('"', "")
+        content_type = resp.headers.get("Content-Type") or "application/octet-stream"
+
+        def iter_chunks():
+            for chunk in resp.iter_content(chunk_size=65536):
+                if chunk:
+                    yield chunk
+
+        return StreamingResponse(
+            iter_chunks(),
+            media_type=content_type,
+            headers={
+                "Content-Disposition": f'attachment; filename="{safe_name}"',
+            },
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to download document: {e}")
+
+
+@app.get("/api/schedule/attendance-link")
+async def api_schedule_attendance_link(
+    class_id: str = Query(...),
+    session_id: str = Query(...),
+    resource_id: Optional[str] = Query(None),
+):
+    fallback_url = f"https://lms.binus.ac.id/lms/course/{class_id}/session/{session_id}"
+    if resource_id:
+        fallback_url += f"?resource={resource_id}"
+
+    try:
+        client = get_client()
+        data = client.get_session_resource(session_id)
+        join_url = data.get("joinUrl") or ""
+        is_ended = bool(data.get("isEnded"))
+
+        # Also check resources[] for virtual class / video conference link if joinUrl is empty
+        if not join_url:
+            for res in data.get("resources") or []:
+                res_url = res.get("joinUrl") or res.get("url") or res.get("link")
+                if res_url:
+                    join_url = res_url
+                    break
+
+        can_join_zoom = bool(join_url) and not is_ended
+        return {
+            "joinUrl": join_url,
+            "isEnded": is_ended,
+            "canJoinZoom": can_join_zoom,
+            "fallbackUrl": fallback_url,
+            "deliveryMode": data.get("deliveryModeDesc") or data.get("classDeliveryMode"),
+        }
+    except Exception as e:
+        return {
+            "joinUrl": "",
+            "isEnded": True,
+            "canJoinZoom": False,
+            "fallbackUrl": fallback_url,
+            "error": str(e),
+        }
 
 
 @app.get("/api/sessions")

@@ -25,6 +25,18 @@ document.addEventListener("alpine:init", () => {
     scheduleAvailabilityFilter: "open",
     scheduleSearchQuery: "",
 
+    teamModalOpen: false,
+    teamModalLoading: false,
+    teamModalError: null,
+    teamModalItem: null,
+    teamModalData: null,
+
+    downloadingDocId: null,
+    docModalOpen: false,
+    docModalItem: null,
+    docModalList: [],
+    docModalError: null,
+
     init() {
       this.loadInitData();
     },
@@ -484,7 +496,193 @@ document.addEventListener("alpine:init", () => {
       this.selectAllScheduleSubjects();
     },
 
-    openAssessmentInLms(item) {
+    isTeamAssessment(item) {
+      const key = this.getGroupedType(item).key;
+      return key === "team_assignment" || key === "project_team";
+    },
+
+    async openTeamModal(item) {
+      this.teamModalItem = item;
+      this.teamModalData = null;
+      this.teamModalError = null;
+      this.teamModalOpen = true;
+      this.teamModalLoading = true;
+      try {
+        const params = new URLSearchParams({ class_id: item.classId });
+        if (item.assessmentGroupId) {
+          params.set("assessment_group_id", item.assessmentGroupId);
+        }
+        const res = await fetch(`/api/schedule/team?${params.toString()}`);
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          this.teamModalError = data.error || `HTTP ${res.status}`;
+          return;
+        }
+        this.teamModalData = data;
+      } catch (err) {
+        this.teamModalError = `Gagal memuat data tim: ${err.message}`;
+      } finally {
+        this.teamModalLoading = false;
+      }
+    },
+
+    closeTeamModal() {
+      this.teamModalOpen = false;
+    },
+
+    getWhatsAppUrl(phone) {
+      if (!phone) return "";
+      let digits = String(phone).replace(/[^0-9]/g, "");
+      if (digits.startsWith("0")) {
+        digits = "62" + digits.slice(1);
+      }
+      return digits ? `https://wa.me/${digits}` : "";
+    },
+
+    getInitials(name) {
+      if (!name) return "?";
+      return name
+        .trim()
+        .split(/\s+/)
+        .slice(0, 2)
+        .map((w) => w[0])
+        .join("")
+        .toUpperCase();
+    },
+
+    hasDownloadableDoc(item) {
+      const key = this.getGroupedType(item).key;
+      return (
+        key === "personal_assignment" ||
+        key === "team_assignment" ||
+        key === "project_team"
+      );
+    },
+
+    getCardActionLabel(item) {
+      const key = this.getGroupedType(item).key;
+      if (key === "forum_discussion") return "Buka Detail Forum";
+      if (key === "attendance") return "Buka Zoom / Kelas";
+      return "Buka di LMS";
+    },
+
+    getDocFilename(doc) {
+      const name = (doc?.name || "document").trim();
+      const ext = (doc?.type || "").trim().replace(/^\./, "");
+      if (ext && !name.toLowerCase().endsWith(`.${ext.toLowerCase()}`)) {
+        return `${name}.${ext}`;
+      }
+      return name;
+    },
+
+    triggerFileDownload(doc) {
+      if (!doc || !doc.url) return;
+      const filename = this.getDocFilename(doc);
+      const downloadUrl = `/api/schedule/download-document?url=${encodeURIComponent(
+        doc.url,
+      )}&filename=${encodeURIComponent(filename)}`;
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    },
+
+    async downloadAssessmentDoc(item) {
+      if (!item || !item.classId || !item.classSessionContentId) {
+        this.docModalItem = item;
+        this.docModalList = [];
+        this.docModalError = "ID dokumen tugas tidak tersedia untuk item ini.";
+        this.docModalOpen = true;
+        return;
+      }
+
+      this.downloadingDocId = item.id;
+      this.docModalItem = item;
+      this.docModalList = [];
+      this.docModalError = null;
+
+      try {
+        const params = new URLSearchParams({
+          class_id: item.classId,
+          resource_id: item.classSessionContentId,
+        });
+        if (item.assessmentId) {
+          params.set("assessment_id", item.assessmentId);
+        }
+        const res = await fetch(`/api/schedule/assessment-documents?${params.toString()}`);
+        const data = await res.json();
+        if (!res.ok || data.error) {
+          this.docModalError = data.error || `HTTP ${res.status}`;
+          this.docModalOpen = true;
+          return;
+        }
+        const docs = data.documents || [];
+        if (docs.length === 1) {
+          this.triggerFileDownload(docs[0]);
+        } else {
+          this.docModalList = docs;
+          this.docModalOpen = true;
+        }
+      } catch (err) {
+        this.docModalError = `Gagal mengambil dokumen: ${err.message}`;
+        this.docModalOpen = true;
+      } finally {
+        this.downloadingDocId = null;
+      }
+    },
+
+    closeDocModal() {
+      this.docModalOpen = false;
+    },
+
+    async openAssessmentInLms(item) {
+      const key = this.getGroupedType(item).key;
+
+      if (key === "forum_discussion") {
+        const params = new URLSearchParams({
+          period: this.schedulePeriod || "",
+          class_id: item.classId || "",
+          session_id: item.classSessionId || "",
+          session_number: item.sessionNumber != null ? String(item.sessionNumber) : "",
+          open_detail: "1",
+        });
+        window.location.href = `/forum?${params.toString()}`;
+        return;
+      }
+
+      if (key === "attendance" && item.classId && item.classSessionId) {
+        const win = window.open("about:blank", "_blank");
+        try {
+          const params = new URLSearchParams({
+            class_id: item.classId,
+            session_id: item.classSessionId,
+          });
+          if (item.classSessionContentId) {
+            params.set("resource_id", item.classSessionContentId);
+          }
+          const res = await fetch(`/api/schedule/attendance-link?${params.toString()}`);
+          const data = await res.json();
+          const targetUrl =
+            data.canJoinZoom && data.joinUrl
+              ? data.joinUrl
+              : data.fallbackUrl || item.deepLink;
+          if (win) {
+            win.location.href = targetUrl;
+          } else if (targetUrl) {
+            window.open(targetUrl, "_blank");
+          }
+        } catch (err) {
+          if (win) {
+            win.location.href = item.deepLink || "https://lms.binus.ac.id";
+          } else if (item.deepLink) {
+            window.open(item.deepLink, "_blank");
+          }
+        }
+        return;
+      }
+
       if (item.deepLink) {
         window.open(item.deepLink, "_blank");
       }
