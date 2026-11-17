@@ -3,7 +3,7 @@
 {% block title %}Jadwal & Asesmen - BINUS LMS Assistant{% endblock %}
 
 {% block extra_css %}
-  <link rel="stylesheet" href="/static/css/schedule.css" />
+  <link rel="stylesheet" href="/static/css/schedule.css?v=3" />
 {% endblock %}
 
 {% block app_data %}scheduleApp{% endblock %}
@@ -318,9 +318,32 @@
           </div>
 
           <!-- Footer link to LMS -->
-          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 0.8rem; font-weight: 600; color: var(--primary); margin-top: 2px;">
-            <span>Buka di LMS</span>
-            <span>↗</span>
+          <div style="display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 2px; flex-wrap: wrap;">
+            <button
+              type="button"
+              class="btn-download-doc"
+              x-show="hasDownloadableDoc(item)"
+              :disabled="downloadingDocId === item.id"
+              @click.stop="downloadAssessmentDoc(item)"
+            >
+              <span x-show="downloadingDocId !== item.id">📥</span>
+              <span x-show="downloadingDocId === item.id" class="spin">⏳</span>
+              <span x-text="downloadingDocId === item.id ? 'Mengambil...' : 'Download Dokumen'"></span>
+            </button>
+            <button
+              type="button"
+              class="btn-view-team"
+              x-show="isTeamAssessment(item)"
+              @click.stop="openTeamModal(item)"
+            >
+              <span>👥</span>
+              <span>View Team</span>
+            </button>
+            <div style="display: flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 600; color: var(--primary);">
+              <span x-text="getCardActionLabel(item)"></span>
+              <span x-text="getGroupedType(item).key === 'forum_discussion' ? '→' : '↗'"></span>
+
+            </div>
           </div>
         </div>
       </div>
@@ -328,6 +351,157 @@
   </div>
 {% endblock %}
 
+{% block modals %}
+  <div
+    class="modal-overlay"
+    :class="{ 'active': teamModalOpen }"
+    x-show="teamModalOpen"
+    x-cloak
+    @click.self="closeTeamModal()"
+    @keydown.escape.window="closeTeamModal()"
+  >
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title-area">
+          <h3 x-text="teamModalData?.group?.groupName ? `${teamModalData.group.groupName} — ${teamModalItem?.title || 'Team'}` : (teamModalItem?.title || 'View Team')">View Team</h3>
+          <p x-text="teamModalItem ? `${teamModalItem.courseCode} • ${teamModalItem.classCode} — ${teamModalItem.courseName}` : ''"></p>
+        </div>
+        <button type="button" class="modal-close-btn" @click="closeTeamModal()" title="Tutup">
+          &times;
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Loading -->
+        <div x-show="teamModalLoading" style="text-align: center; padding: 36px 16px;">
+          <div class="spinner" style="margin: 0 auto 12px auto;"></div>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Memuat anggota tim...</p>
+        </div>
+
+        <!-- Error -->
+        <div x-show="!teamModalLoading && teamModalError" class="status-bar" style="border-color: var(--danger); color: var(--danger);">
+          <span x-text="teamModalError"></span>
+        </div>
+
+        <!-- Empty -->
+        <div x-show="!teamModalLoading && !teamModalError && (!teamModalData?.group || !(teamModalData.group.people || []).length)" style="text-align: center; padding: 32px 16px; color: var(--text-muted);">
+          <div style="font-size: 2rem; margin-bottom: 8px;">👥</div>
+          <p style="font-weight: 600; color: var(--text);">Data tim tidak ditemukan</p>
+          <p style="font-size: 0.85rem; margin-top: 4px;">Belum ada anggota kelompok yang terdaftar untuk tugas ini.</p>
+        </div>
+
+        <!-- Group & Members -->
+        <template x-if="!teamModalLoading && !teamModalError && teamModalData?.group && (teamModalData.group.people || []).length > 0">
+          <div style="display: flex; flex-direction: column; gap: 14px;">
+            <div class="team-group-banner">
+              <div>
+                <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted);" x-text="teamModalData.groupSetName || 'Group'"></div>
+                <div style="font-size: 1.05rem; font-weight: 800; color: var(--primary);" x-text="teamModalData.group.groupName || 'Team'"></div>
+              </div>
+              <span class="badge badge-type-tag" x-text="`${teamModalData.group.people.length} Anggota`"></span>
+            </div>
+
+            <div class="team-members-list">
+              <template x-for="person in teamModalData.group.people" :key="person.userId || person.code">
+                <div class="team-member-card" x-data="{ imgFailed: false }">
+                  <div class="team-member-left">
+                    <template x-if="person.pictureUrl && !imgFailed">
+                      <img
+                        class="team-member-avatar"
+                        :src="person.pictureUrl"
+                        :alt="person.name"
+                        @error="imgFailed = true"
+                      />
+                    </template>
+                    <template x-if="!person.pictureUrl || imgFailed">
+                      <div class="team-member-avatar-fallback" x-text="getInitials(person.name)"></div>
+                    </template>
+
+                    <div class="team-member-info">
+                      <div class="team-member-name">
+                        <span x-text="person.name"></span>
+                        <span
+                          x-show="person.userId && person.userId === teamModalData.currentUserId"
+                          class="badge badge-comp-lec"
+                          style="font-size: 0.68rem; padding: 1px 6px;"
+                        >Anda</span>
+                      </div>
+                      <div class="team-member-meta">
+                        <span x-show="person.code">🆔 <span x-text="person.code"></span></span>
+                        <span x-show="person.email">
+                          ✉️ <a :href="'mailto:' + person.email" x-text="person.email"></a>
+                        </span>
+                        <span x-show="person.phoneNumber">📞 <span x-text="person.phoneNumber"></span></span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <template x-if="getWhatsAppUrl(person.phoneNumber)">
+                    <a
+                      class="btn-whatsapp"
+                      :href="getWhatsAppUrl(person.phoneNumber)"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <span>💬</span>
+                      <span>WhatsApp</span>
+                    </a>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+    </div>
+  </div>
+  <!-- Documents Modal (when multiple documents or no documents) -->
+  <div
+    class="modal-overlay"
+    :class="{ 'active': docModalOpen }"
+    x-show="docModalOpen"
+    x-cloak
+    @click.self="closeDocModal()"
+    @keydown.escape.window="closeDocModal()"
+  >
+    <div class="modal-container" style="max-width: 520px;">
+      <div class="modal-header">
+        <div class="modal-title-area">
+          <h3 x-text="docModalItem?.title || 'Dokumen Tugas'">Dokumen Tugas</h3>
+          <p x-text="docModalItem ? `${docModalItem.courseCode} • ${docModalItem.classCode} — ${docModalItem.courseName}` : ''"></p>
+        </div>
+        <button type="button" class="modal-close-btn" @click="closeDocModal()" title="Tutup">
+          &times;
+        </button>
+      </div>
+      <div class="modal-body">
+        <div x-show="docModalError" class="status-bar" style="border-color: var(--danger); color: var(--danger);">
+          <span x-text="docModalError"></span>
+        </div>
+        <div x-show="!docModalError && docModalList.length === 0" style="text-align: center; padding: 28px 16px; color: var(--text-muted);">
+          <div style="font-size: 2rem; margin-bottom: 8px;">📄</div>
+          <p style="font-weight: 600; color: var(--text);">Tidak ada dokumen lampiran</p>
+          <p style="font-size: 0.85rem; margin-top: 4px;">Tugas ini tidak memiliki file soal/lampiran untuk diunduh.</p>
+        </div>
+        <div x-show="!docModalError && docModalList.length > 0" style="display: flex; flex-direction: column; gap: 10px;">
+          <template x-for="(doc, idx) in docModalList" :key="idx">
+            <div class="doc-item-card">
+              <div style="min-width: 0;">
+                <div style="font-weight: 700; color: var(--text); word-break: break-word;" x-text="getDocFilename(doc)"></div>
+                <div style="font-size: 0.78rem; color: var(--text-muted);" x-text="doc.size ? `${doc.size} KB` : (doc.type || 'Dokumen')"></div>
+              </div>
+              <button type="button" class="btn-download-doc" @click="triggerFileDownload(doc)">
+                <span>📥</span>
+                <span>Download</span>
+              </button>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
+
 {% block extra_js %}
-  <script src="/static/js/schedule.js"></script>
+  <script src="/static/js/schedule.js?v=3"></script>
 {% endblock %}

@@ -157,13 +157,47 @@ document.addEventListener("alpine:init", () => {
         this.authError = null;
         this.user = data.user;
         this.periods = data.periods || [];
-        this.selectedPeriod = data.activePeriod || (this.periods[0] ? this.periods[0].code : "");
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetPeriod = urlParams.get("period");
+        const targetClassId = urlParams.get("class_id");
+        const targetSessionId = urlParams.get("session_id");
+        const targetSessionNumber = urlParams.get("session_number");
+        const openDetail = urlParams.get("open_detail") === "1";
+
+        this.selectedPeriod =
+          targetPeriod || data.activePeriod || (this.periods[0] ? this.periods[0].code : "");
         this.courses = data.courses || [];
-        this.selectedCourseIndex = this.courses.length > 0 ? 0 : "";
+
+        if (targetPeriod && targetPeriod !== data.activePeriod) {
+          const subjRes = await fetch(
+            `/api/subjects?period=${encodeURIComponent(this.selectedPeriod)}`,
+          );
+          const subjData = await subjRes.json();
+          this.courses = subjData.courses || [];
+        }
+
+        if (targetClassId) {
+          let idx = this.courses.findIndex((c) => c.classId === targetClassId);
+          if (idx === -1) {
+            const labRes = await fetch(
+              `/api/subjects?period=${encodeURIComponent(this.selectedPeriod)}&include_lab=true`,
+            );
+            const labData = await labRes.json();
+            this.courses = labData.courses || this.courses;
+            idx = this.courses.findIndex((c) => c.classId === targetClassId);
+          }
+          this.selectedCourseIndex = idx >= 0 ? idx : (this.courses.length > 0 ? 0 : "");
+        } else {
+          this.selectedCourseIndex = this.courses.length > 0 ? 0 : "";
+        }
 
         this.statusBarText = "✅ Ready.";
         if (this.courses.length > 0) {
-          await this.onSubjectChange();
+          await this.onSubjectChange({
+            targetSessionId,
+            targetSessionNumber,
+            openDetail,
+          });
         }
       } catch (err) {
         this.statusBarText = `❌ Network error initializing: ${err.message}`;
@@ -196,7 +230,7 @@ document.addEventListener("alpine:init", () => {
       }
     },
 
-    async onSubjectChange() {
+    async onSubjectChange(deepLinkOpts = null) {
       if (this.selectedCourseIndex === "" || !this.courses[this.selectedCourseIndex]) {
         this.statusBarText = "⚠️ Please select a subject first.";
         return;
@@ -226,7 +260,19 @@ document.addEventListener("alpine:init", () => {
           return;
         }
 
-        const activeSession = this.sessions.find((s) => s.isActive);
+        let matchedSession = null;
+        if (deepLinkOpts?.targetSessionId) {
+          matchedSession = this.sessions.find(
+            (s) => s.sessionId === deepLinkOpts.targetSessionId,
+          );
+        }
+        if (!matchedSession && deepLinkOpts?.targetSessionNumber) {
+          matchedSession = this.sessions.find(
+            (s) => String(s.classSessionNumber) === String(deepLinkOpts.targetSessionNumber),
+          );
+        }
+
+        const activeSession = matchedSession || this.sessions.find((s) => s.isActive);
         if (activeSession) {
           this.selectedSessionId = activeSession.sessionId;
         } else if (data.activeSessionId) {
@@ -236,6 +282,11 @@ document.addEventListener("alpine:init", () => {
         }
 
         await this.fetchPosts();
+
+        if (deepLinkOpts?.openDetail && this.threads.length > 0) {
+          this.openCommentsModal(this.threads[0].threadId);
+          window.history.replaceState({}, "", "/forum");
+        }
       } catch (err) {
         this.statusBarText = `❌ Error loading sessions: ${err.message}`;
       }

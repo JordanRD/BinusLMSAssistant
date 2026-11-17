@@ -210,6 +210,29 @@ class LmsApiClient:
 
         return []
 
+    def get_class_groups(self, class_id: str, force_refresh: bool = False) -> List[Dict[str, Any]]:
+        """Fetch active student groups for a class (cached 10 mins)."""
+        cache_key = f"class_groups_{class_id}"
+        if not force_refresh:
+            cached = self._get_cache(cache_key, 600)
+            if cached is not None:
+                return cached
+
+        url = f"{COURSE_SERVICE}/People/Class/{class_id}/Group/List/Active/Student"
+        try:
+            resp = self.session.get(url, timeout=15)
+            if resp.status_code == 200:
+                data = resp.json()
+                groups = data if isinstance(data, list) else []
+                self._set_cache(cache_key, groups)
+                return groups
+            else:
+                print(f"[lms_api] Class Groups HTTP {resp.status_code} for class {class_id}")
+        except Exception as e:
+            print(f"[lms_api] Error fetching class groups for class {class_id}: {e}")
+
+        return []
+
     def get_sessions(self, class_id: str, force_refresh: bool = False) -> List[Dict[str, Any]]:
         """Fetch forum sessions for a class (cached 5 mins)."""
         cache_key = f"sessions_{class_id}"
@@ -388,3 +411,89 @@ class LmsApiClient:
             error_msg = resp.text.strip() or f"HTTP {resp.status_code}"
             raise RuntimeError(f"LMS API Error ({resp.status_code}): {error_msg}")
         return resp.json()
+
+    def get_assessment_documents(
+        self,
+        class_id: str,
+        resource_id: str,
+        assessment_id: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Fetch downloadable attachment documents for an assessment."""
+        opening_url = (
+            f"{ASSESSMENT_SERVICE}/Assessment/ClassId/{class_id}"
+            f"/ClassSessionContent/{resource_id}/Opening/Platform/Web"
+        )
+        resp = self.session.get(opening_url, timeout=15)
+        resp.raise_for_status()
+        opening = resp.json() if resp.content else {}
+
+        resolved_assessment_id = opening.get("assessmentId") or assessment_id
+        personalized_id = opening.get("assessmentPersonalizedId")
+        version_id = opening.get("versionId")
+
+        if not version_id and resolved_assessment_id and personalized_id:
+            start_url = (
+                f"{ASSESSMENT_SERVICE}/Assessment/{resolved_assessment_id}"
+                f"/Personalized/{personalized_id}/StartAttempt/V20241023"
+            )
+            start_resp = self.session.post(start_url, json={}, timeout=15)
+            if start_resp.status_code == 200 and start_resp.content:
+                start_data = start_resp.json()
+                versions = start_data.get("versions") or []
+                if versions:
+                    version_id = versions[-1].get("id") or versions[0].get("id")
+
+        if not resolved_assessment_id or not version_id:
+            return []
+
+        docs: List[Dict[str, Any]] = []
+        seen_urls = set()
+
+        def collect_from_questions(q_list: List[Dict[str, Any]]) -> None:
+            for q in q_list or []:
+                for att in q.get("attachments") or []:
+                    url = att.get("url")
+                    if url and url not in seen_urls:
+                        seen_urls.add(url)
+                        docs.append({
+                            "name": att.get("name") or "document",
+                            "type": att.get("type") or "",
+                            "size": att.get("size"),
+                            "url": url,
+                        })
+
+        q_url = (
+            f"{ASSESSMENT_SERVICE}/ClassId/{class_id}/Assessment/{resolved_assessment_id}"
+            f"/Question/Version/{version_id}"
+        )
+        q_resp = self.session.get(q_url, timeout=15)
+        if q_resp.status_code == 200 and q_resp.content:
+            q_data = q_resp.json()
+            collect_from_questions(q_data.get("question") or q_data.get("questions") or [])
+
+        if not docs:
+            rev_url = (
+                f"{ASSESSMENT_SERVICE}/ClassId/{class_id}/Assessment/{resolved_assessment_id}"
+                f"/Question/Answer/Review/{version_id}"
+            )
+            rev_resp = self.session.get(rev_url, timeout=15)
+            if rev_resp.status_code == 200 and rev_resp.content:
+                rev_data = rev_resp.json()
+                collect_from_questions(rev_data.get("questions") or rev_data.get("question") or [])
+
+        return docs
+
+    def get_session_resource(self, session_id: str, force_refresh: bool = False) -> Dict[str, Any]:
+        """Fetch session resources including Zoom joinUrl and isEnded status."""
+        cache_key = f"session_resource_{session_id}"
+        if not force_refresh:
+            cached = self._get_cache(cache_key, 60)
+            if cached is not None:
+                return cached
+
+        url = f"{COURSE_SERVICE}/ClassSession/Session/{session_id}/Resource/Student?isWeb=true"
+        resp = self.session.get(url, timeout=15)
+        resp.raise_for_status()
+        data = resp.json() if resp.content else {}
+        self._set_cache(cache_key, data)
+        return data
