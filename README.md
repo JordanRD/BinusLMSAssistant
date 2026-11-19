@@ -21,6 +21,8 @@ A standalone local web application and **Model Context Protocol (MCP) Server** b
 
 ### 📅 2. Schedule & Assessment Dashboard (`/schedule`)
 
+![Web UI Schedule and Assessment Dashboard](assets/schedule-ui-demo.jpg)
+
 - **Unified Assessment Timeline**: Consolidates all individual assignments, group/team assignments, quizzes, and forum activities into a single clean dashboard.
 - **Deadline Tracking & Countdown**: Automatically sorted by nearest deadline, complete with remaining time countdown badges and *urgent* / *overdue* warnings.
 - **Submission & Scoring Status**: Monitor submission progress (*Submitted* / *Not Submitted*), grading status (*Scored* / *Not Scored*), and earned scores.
@@ -49,6 +51,7 @@ A standalone local web application and **Model Context Protocol (MCP) Server** b
 lms_forum_answer/
 ├── assets/                   # Screenshots & documentation assets
 │   ├── forum-ui-demo.jpg     # Web UI Forum Assistant screenshot
+│   ├── schedule-ui-demo.jpg  # Web UI Schedule & Assessment Dashboard screenshot
 │   └── mcp-assistant-demo.jpg# AI Assistant MCP query screenshot
 ├── .chrome_user_data/        # Local Chrome profile (cookies, SSO session)
 ├── .auth_cache.json          # Decrypted JWT token cache & APIM headers
