@@ -1,9 +1,9 @@
 import json
 import sys
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from fastapi import FastAPI, HTTPException, Query, Request
 from urllib.parse import urlparse
 import requests
 from fastapi import FastAPI, HTTPException, Query, Request
@@ -14,6 +14,7 @@ from pydantic import BaseModel
 import uvicorn
 import lms_auth
 from lms_api import LmsApiClient, html_to_plain_text, is_thread_replied
+from mcp_server import mcp as mcp_instance, mcp_app
 
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -23,9 +24,24 @@ if hasattr(sys.stderr, "reconfigure"):
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 TEMPLATES_DIR = Path(__file__).resolve().parent / "templates"
 
-app = FastAPI(title="BINUS LMS Forum Assistant")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with mcp_instance.session_manager.run():
+        yield
+
+
+app = FastAPI(title="BINUS LMS Forum Assistant", lifespan=lifespan)
+
+# Rewrite /mcp to /mcp/ so both /mcp and /mcp/ work seamlessly without redirect issues
+@app.middleware("http")
+async def rewrite_mcp_path(request: Request, call_next):
+    if request.url.path == "/mcp":
+        request.scope["path"] = "/mcp/"
+    return await call_next(request)
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+app.mount("/mcp", mcp_app)
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 # In-memory client cache
@@ -661,7 +677,8 @@ async def api_relogin():
 def start_server(port: int = 8000):
     print("=" * 60)
     print(f"🎓 BINUS LMS Forum Assistant Web Server running at:")
-    print(f"👉 http://127.0.0.1:{port}")
+    print(f"👉 Web UI: http://127.0.0.1:{port}")
+    print(f"👉 MCP Endpoint: http://127.0.0.1:{port}/mcp")
     print("=" * 60)
     uvicorn.run(app, host="127.0.0.1", port=port, log_level="info")
 

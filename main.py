@@ -19,15 +19,21 @@ def main():
         lms_auth.trigger_interactive_login()
         return
 
+    if len(sys.argv) > 1 and sys.argv[1] in ("--mcp-stdio", "--stdio"):
+        from mcp_server import mcp
+        mcp.run(transport="stdio")
+        return
+
     from server import start_server
 
     port = 8000
     url = f"http://127.0.0.1:{port}"
 
-    # Open browser automatically in background thread
-    threading.Thread(target=open_browser_delayed, args=(url,), daemon=True).start()
+    # Open browser automatically in background thread unless --no-browser is specified
+    if "--no-browser" not in sys.argv:
+        threading.Thread(target=open_browser_delayed, args=(url,), daemon=True).start()
 
-    # Start FastAPI server
+    # Start FastAPI server (serves web UI and /mcp)
     start_server(port=port)
 
 

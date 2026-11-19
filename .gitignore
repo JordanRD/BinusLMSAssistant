@@ -17,6 +17,7 @@ wheels/
 .chrome_user_data/
 chrome_data/
 *.session
+.auth_cache.json
 
 # Logs
 *.log
