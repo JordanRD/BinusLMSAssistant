@@ -41,6 +41,7 @@ Aplikasi web lokal mandiri dan **Model Context Protocol (MCP) Server** berbasis 
 
 ```text
 lms_forum_answer/
+├── assets/                   # Tangkapan layar & aset dokumentasi
 ├── .chrome_user_data/        # Profil Chrome lokal (cookies, session SSO)
 ├── .auth_cache.json          # Cache token JWT & headers APIM terdekripsi
 ├── lms_auth.py               # Otomasi login Selenium & ekstraksi token JWT
@@ -171,6 +172,9 @@ Browser Chrome akan terbuka. Silakan login ke akun BINUS Anda. Sesi baru akan di
 
 Server ini mengimplementasikan protokol **Model Context Protocol (MCP)**, memungkinkan AI Assistant (Antigravity, Claude Desktop, Cursor, Roo Code, dll.) mengakses data LMS secara langsung.
 
+![Contoh Interaksi AI Assistant via MCP](assets/mcp-assistant-demo.jpg)
+*Contoh interaksi: AI Assistant secara otomatis memanggil tool MCP untuk mengecek dan merangkum tugas, tenggat waktu asesmen, serta topik forum yang belum dikerjakan.*
+
 ### 1. HTTP Transport (Streamable HTTP)
 Gunakan opsi ini jika aplikasi web atau PM2 sedang berjalan di background:
 - **URL**: `http://127.0.0.1:8000/mcp`
@@ -220,8 +224,17 @@ Gunakan opsi ini jika ingin klien AI menjalankan script MCP secara mandiri sesua
 
 ---
 
-## 🔒 Keamanan & Privasi
+## 🔒 Kebijakan Privasi (Privacy Policy)
 
-- Kredensial dan token disimpan secara eksklusif di mesin lokal Anda (`.auth_cache.json` & `.chrome_user_data/`).
-- Berkas sesi dan cache sudah otomatis dimasukkan ke dalam `.gitignore` sehingga tidak akan terunggah ke repositori Git publik.
-- Aplikasi ini berkomunikasi secara langsung ke endpoint resmi Azure APIM BINUS LMS (`lms.binus.ac.id`) tanpa perantara server pihak ketiga manapun.
+- **Penyimpanan Lokal Eksklusif**: Kredensial, profil browser (`.chrome_user_data/`), dan token otentikasi (`.auth_cache.json`) disimpan sepenuhnya di perangkat lokal Anda.
+- **Tanpa Server Pihak Ketiga**: Tidak ada analitik, telemetri, atau data yang dikirimkan ke server pengembang maupun pihak ketiga lainnya. Aplikasi hanya berkomunikasi langsung secara aman dengan endpoint Azure APIM BINUS LMS resmi.
+- **Tanggung Jawab Pengelolaan & Penyebaran Data**: Segala bentuk pengelolaan, kerahasiaan, serta potensi penyebaran data/kredensial menjadi tanggung jawab penuh masing-masing pengguna. Pastikan untuk tidak membagikan berkas cache atau mengunggah folder sesi ke repositori publik (sudah terlindungi secara bawaan via `.gitignore`).
+
+---
+
+## 📜 Kebijakan Penggunaan & Penyangkalan (Terms of Use & Disclaimer)
+
+1. **Bukan Proyek Resmi**: Aplikasi ini merupakan proyek independen untuk mempermudah produktivitas pribadi dan **TIDAK berafiliasi, didukung, disponsori, maupun dikelola secara resmi oleh BINUS University**. Semua hak cipta, merek dagang, dan nama institusi adalah milik BINUS University.
+2. **Kepatuhan Otorisasi API**: Aplikasi ini hanya mengakses endpoint API yang sah dan telah diotorisasi berdasarkan hak akses (*authorization scope*) akun login pengguna yang bersangkutan. Sistem **tidak melakukan bypass keamanan, eksploitasi, atau melampaui batas wewenang** yang telah ditetapkan oleh LMS.
+3. **Larangan Penyalahgunaan**: Aplikasi ini dibuat untuk tujuan asistensi belajar dan efisiensi manajemen tugas. Dilarang keras menyalahgunakan aplikasi ini untuk kecurangan akademik, spamming balasan forum, merusak sistem, atau melanggar kode etik dan tata tertib perkuliahan.
+4. **Batasan Tanggung Jawab**: Penggunaan aplikasi ini sepenuhnya menjadi risiko dan tanggung jawab pribadi pengguna (*use at your own risk*). Pengembang tidak bertanggung jawab atas segala dampak, kendala, atau konsekuensi yang timbul akibat penggunaan maupun penyalahgunaan aplikasi ini.
