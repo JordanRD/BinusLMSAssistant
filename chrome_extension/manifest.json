@@ -1,0 +1,36 @@
+{
+  "manifest_version": 3,
+  "name": "BINUS LMS Schedule & Assessments",
+  "version": "1.0.0",
+  "description": "Jadwal Kuliah & Asesmen BINUS LMS dengan pengingat tugas harian dan badge tugas minggu ini (Senin–Senin).",
+  "permissions": [
+    "storage",
+    "sidePanel",
+    "alarms",
+    "notifications"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8000/*",
+    "http://localhost:8000/*"
+  ],
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "schedule.html?view=popup",
+    "default_title": "BINUS LMS Schedule & Assessments",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "side_panel": {
+    "default_path": "schedule.html?view=sidepanel"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

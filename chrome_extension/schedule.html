@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Jadwal &amp; Asesmen - BINUS LMS Assistant</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/schedule.css" />
+  </head>
+  <body class="mode-popup">
+    <div class="ext-container">
+      <!-- Compact Header -->
+      <header class="ext-header">
+        <div class="brand-area">
+          <div class="brand-icon">🎓</div>
+          <div class="brand-title-wrap">
+            <h1>Jadwal &amp; Asesmen</h1>
+            <p class="status-subtitle" id="statusBarText">
+              ⏳ Menginisialisasi sesi &amp; periode...
+            </p>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div class="user-pill" id="userPill">
+            <span>Loading user...</span>
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-secondary btn-compact"
+            id="reloginBtn"
+            title="Login ulang ke BINUS LMS"
+          >
+            <span id="reloginSpinner" class="spinner hidden" style="width: 12px; height: 12px;"></span>
+            <span id="reloginBtnText">🔑 Re-Login</span>
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-secondary btn-compact"
+            id="openSidePanelBtn"
+            title="Buka di Side Panel Chrome"
+          >
+            <span>📌 Panel</span>
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-secondary btn-compact"
+            id="openFullTabBtn"
+            title="Buka di Tab Penuh"
+          >
+            <span>↗ Tab</span>
+          </button>
+
+          <button
+            type="button"
+            class="btn btn-secondary btn-compact"
+            id="toggleSettingsBtn"
+            title="Pengaturan Server Backend"
+          >
+            <span>⚙️</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Backend URL Settings Panel (Collapsible) -->
+      <div id="settingsPanel" class="card settings-panel hidden">
+        <div class="settings-row">
+          <div class="settings-input-wrap">
+            <label for="backendUrlInput">Backend Server URL (FastAPI):</label>
+            <input
+              type="text"
+              id="backendUrlInput"
+              class="select-input"
+              placeholder="http://127.0.0.1:8000"
+            />
+          </div>
+          <div class="settings-actions">
+            <button type="button" class="btn btn-primary btn-compact" id="saveSettingsBtn">
+              Simpan &amp; Muat Ulang
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary btn-compact"
+              id="testNotificationBtn"
+              title="Kirim notifikasi pengingat tugas hari ini"
+            >
+              🔔 Test Notifikasi
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compact Summary Strip: Active Task Reminder & Today Deadline -->
+      <div class="summary-badges-row" id="summaryBadgesRow">
+        <button
+          type="button"
+          class="summary-badge-card weekly-card"
+          id="activeReminderCard"
+          title="Klik untuk memfilter tugas aktif (Presensi: hari H 00:00–23:59, Tugas lain: max(end date - 7 hari, start date) s/d end date)"
+        >
+          <div class="summary-card-text">
+            <span class="summary-card-label" id="activeReminderSubtitle">📌 Rentang Aktif</span>
+            <span class="summary-card-value" id="activeReminderTitle">Memeriksa...</span>
+          </div>
+          <span class="summary-count-pill" id="activeReminderCountBadge">0</span>
+        </button>
+
+        <button
+          type="button"
+          class="summary-badge-card today-card"
+          id="todayReminderCard"
+          title="Klik untuk memfilter tugas dengan tenggat hari ini (00:00–23:59)"
+        >
+          <div class="summary-card-text">
+            <span class="summary-card-label" id="todayReminderSubtitle">🔔 Tenggat Hari Ini</span>
+            <span class="summary-card-value" id="todayReminderTitle">Memeriksa...</span>
+          </div>
+          <span class="summary-count-pill" id="todayTaskCountBadge">0</span>
+        </button>
+      </div>
+
+      <!-- Error Banner -->
+      <div
+        id="scheduleErrorBanner"
+        class="status-bar error-banner hidden"
+      ></div>
+
+      <!-- Unified Compact Filter & Toolbar Card -->
+      <div class="schedule-filter-card">
+        <!-- Row 1: Period, Refresh, Search, LEC/LAB, Advanced Filter Toggle -->
+        <div class="schedule-toolbar-row">
+          <div class="toolbar-left">
+            <select
+              id="periodSelect"
+              class="select-input compact-select"
+              title="Pilih Periode Akademik"
+            ></select>
+
+            <button
+              type="button"
+              class="btn btn-secondary btn-compact"
+              id="refreshBtn"
+              title="Refresh Asesmen dari LMS"
+            >
+              <span id="refreshIcon">🔄</span>
+              <span>Refresh</span>
+            </button>
+
+            <div class="comp-Quick-group">
+              <button
+                type="button"
+                class="filter-pill pill-lec active"
+                id="btnCatLEC"
+                data-category="LEC"
+                title="Filter Teori (LEC)"
+              >
+                <span>📘 LEC</span>
+                <span class="pill-counter" id="countCompLEC">0</span>
+              </button>
+              <button
+                type="button"
+                class="filter-pill pill-lab active"
+                id="btnCatLAB"
+                data-category="LAB"
+                title="Filter Praktikum (LAB)"
+              >
+                <span>💻 LAB</span>
+                <span class="pill-counter" id="countCompLAB">0</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="toolbar-right">
+            <input
+              type="text"
+              id="searchInput"
+              class="select-input compact-search"
+              placeholder="🔍 Cari tugas / matkul..."
+            />
+
+            <button
+              type="button"
+              class="btn btn-secondary btn-compact"
+              id="toggleAdvFiltersBtn"
+              title="Tampilkan/Sembunyikan Filter Jenis Tugas &amp; Mata Kuliah"
+            >
+              <span>🎛️ Filter</span>
+              <span class="pill-counter" id="advFilterBadge">Semua</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Row 2: Availability / Status Tabs + Summary Count -->
+        <div class="schedule-status-row">
+          <div class="avail-tabs-wrap" id="availabilityTabsContainer">
+            <button type="button" class="filter-pill" data-avail="all">
+              <span>Semua</span>
+              <span class="pill-counter" id="countAvailAll">0</span>
+            </button>
+            <button
+              type="button"
+              class="filter-pill"
+              data-avail="reminder_window"
+              title="Presensi: hari H (00:00–23:59) | Lainnya: max(end date - 7 hari, start date) s/d end date"
+            >
+              <span>📌 Aktif</span>
+              <span class="pill-counter" id="countAvailReminderWindow">0</span>
+            </button>
+            <button
+              type="button"
+              class="filter-pill"
+              data-avail="today"
+              title="Tugas dengan tenggat hari ini (00:00–23:59)"
+            >
+              <span>🔔 Hari Ini</span>
+              <span class="pill-counter" id="countAvailToday">0</span>
+            </button>
+            <button
+              type="button"
+              class="filter-pill active"
+              data-avail="open"
+            >
+              <span>🟢 Buka</span>
+              <span class="pill-counter" id="countAvailOpen">0</span>
+            </button>
+            <button type="button" class="filter-pill" data-avail="upcoming">
+              <span>⏳ Belum</span>
+              <span class="pill-counter" id="countAvailUpcoming">0</span>
+            </button>
+            <button type="button" class="filter-pill" data-avail="completed">
+              <span>✅ Selesai</span>
+              <span class="pill-counter" id="countAvailCompleted">0</span>
+            </button>
+            <button
+              type="button"
+              class="filter-pill"
+              data-avail="overdue"
+            >
+              <span>🔴 Lewat</span>
+              <span class="pill-counter" id="countAvailOverdue">0</span>
+            </button>
+          </div>
+
+          <div class="results-counter-inline">
+            <span><strong id="filteredCountText">0</strong>/<span id="totalCountText">0</span> tugas</span>
+            <button type="button" class="filter-text-btn hidden" id="resetFiltersBtn">
+              Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Collapsible Drawer: Assessment Types & Subjects -->
+        <div id="advancedFiltersDrawer" class="adv-filters-drawer hidden">
+          <div class="adv-filter-section">
+            <div class="filter-group-title">
+              <span>Jenis Tugas</span>
+              <div class="filter-group-actions">
+                <button type="button" class="filter-text-btn" id="selectAllTypesBtn">Semua</button>
+                <span>·</span>
+                <button type="button" class="filter-text-btn" id="clearAllTypesBtn">Reset</button>
+              </div>
+            </div>
+            <div class="pills-flow" id="typesPillsContainer"></div>
+          </div>
+
+          <div class="adv-filter-section">
+            <div class="filter-group-title">
+              <span>Mata Kuliah</span>
+              <div class="filter-group-actions">
+                <button type="button" class="filter-text-btn" id="selectAllSubjectsBtn">Semua</button>
+                <span>·</span>
+                <button type="button" class="filter-text-btn" id="clearAllSubjectsBtn">Reset</button>
+              </div>
+            </div>
+            <div class="pills-flow" id="subjectsPillsContainer"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading State -->
+      <div id="loadingState" class="state-box">
+        <div class="spin" style="display: inline-block; font-size: 1.5rem; margin-bottom: 6px;">🔄</div>
+        <div style="font-weight: 600; font-size: 0.9rem;">Memuat daftar asesmen &amp; jadwal...</div>
+        <div style="color: var(--text-muted); font-size: 0.76rem; margin-top: 2px;">
+          Mengambil data seluruh mata kuliah teori &amp; praktikum
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="card state-box hidden">
+        <div style="font-size: 1.8rem; margin-bottom: 6px;">📋</div>
+        <h3 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 4px;">
+          Tidak ada asesmen yang cocok
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.78rem; max-width: 380px; margin: 0 auto 10px auto;">
+          Tidak ditemukan tugas untuk kombinasi filter yang dipilih.
+        </p>
+        <button type="button" class="btn btn-secondary btn-compact" id="emptyResetFiltersBtn">
+          Reset Filter
+        </button>
+      </div>
+
+      <!-- Compact Cards Grid -->
+      <div class="schedule-cards-grid hidden" id="cardsGrid"></div>
+    </div>
+
+    <!-- Team Modal -->
+    <div class="modal-overlay" id="teamModalOverlay">
+      <div class="modal-container">
+        <div class="modal-header">
+          <div class="modal-title-area">
+            <h3 id="teamModalTitle">View Team</h3>
+            <p id="teamModalSubtitle"></p>
+          </div>
+          <button type="button" class="modal-close-btn" id="closeTeamModalBtn" title="Tutup">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body" id="teamModalBody"></div>
+      </div>
+    </div>
+
+    <!-- Documents Modal -->
+    <div class="modal-overlay" id="docModalOverlay">
+      <div class="modal-container" style="max-width: 500px;">
+        <div class="modal-header">
+          <div class="modal-title-area">
+            <h3 id="docModalTitle">Dokumen Tugas</h3>
+            <p id="docModalSubtitle"></p>
+          </div>
+          <button type="button" class="modal-close-btn" id="closeDocModalBtn" title="Tutup">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body" id="docModalBody"></div>
+      </div>
+    </div>
+
+    <script src="js/schedule.js"></script>
+  </body>
+</html>
